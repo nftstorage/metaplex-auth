@@ -3,12 +3,12 @@ import { CarReader } from '@ipld/car'
 import { MemoryBlockStore } from 'ipfs-car/blockstore/memory'
 import type { CID } from 'multiformats/cid'
 
-export interface PackCarsResult {
+export interface PackFilesResult {
   car: CarReader,
   root: CID,
 }
 
-export async function packCars(...files: File[]): Promise<PackCarsResult> {
+export async function packFiles(...files: File[]): Promise<PackFilesResult> {
   const blockstore = new MemoryBlockStore()
   try {
     const { out, root } = await pack({

@@ -1,6 +1,7 @@
 import { fetch } from './platform'
 import { base58btc } from 'multiformats/bases/base58'
 import * as varint from 'varint'
+import nacl from 'tweetnacl'
 
 const HeaderMintKey = "X-Metaplex-Mint-PubKey"
 const HeaderSignature = "X-Metaplex-Mint-Signature"
@@ -21,23 +22,40 @@ export interface AuthContext {
 
   solanaCluster: SolanaCluster
 
-  signer: Signer
+  signMessage: Signer
 
-  pubkey: Uint8Array
+  publicKey: Uint8Array
 }
 
-export interface Signer {
-  signMessage(message: Uint8Array): Promise<Uint8Array>
-}
+type Signer = (message: Uint8Array) => Promise<Uint8Array>
 
-interface RequestContext {
+export interface RequestContext {
   message: RequestMessage
   messageBytes: Uint8Array
   mintDID: string
   signature: Uint8Array
 }
 
-async function getUploadToken(auth: AuthContext, rootCID: string): Promise<string> {
+export function MetaplexAuthWithSigner(signMessage: Signer, publicKey: Uint8Array, solanaCluster: SolanaCluster = 'devnet'): AuthContext {
+  const chain = 'solana'
+  return {
+    chain,
+    solanaCluster,
+    signMessage,
+    publicKey
+  }
+}
+
+export function MetaplexAuthWithSecretKey(privkey: Uint8Array, solanaCluster: SolanaCluster = 'devnet'): AuthContext {
+  const { publicKey, secretKey } = nacl.sign.keyPair.fromSecretKey(privkey)
+  const signMessage = async (message: Uint8Array) => {
+    return nacl.sign.detached(message, secretKey)
+  }
+
+  return MetaplexAuthWithSigner(signMessage, publicKey, solanaCluster)
+}
+
+export async function getUploadToken(auth: AuthContext, rootCID: string): Promise<string> {
   const requestContext = await makePutCarRequestContext(auth, rootCID)
 
   const res = await fetch(MetaplexAuthEndpoint, {
@@ -70,8 +88,8 @@ async function makePutCarRequestContext(auth: AuthContext, rootCID: string): Pro
   const messageBytes = new TextEncoder().encode(JSON.stringify(message))
   const toSign = new Uint8Array([...SigningDomainPrefix, ...messageBytes])
 
-  const mintDID = keyDID(auth.pubkey)
-  const signature = await auth.signer.signMessage(toSign)
+  const mintDID = keyDID(auth.publicKey)
+  const signature = await auth.signMessage(toSign)
   return { message, messageBytes, mintDID, signature }
 }
 

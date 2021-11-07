@@ -17,6 +17,8 @@
     "carbites": "^1.0.6",
     "ipfs-car": "^0.5.9",
     "multiformats": "^9.4.10",
+    "p-retry": "^5.0.0",
+    "streaming-iterables": "^6.0.0",
     "tweetnacl": "^1.0.3",
     "varint": "^6.0.0"
   },
