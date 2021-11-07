@@ -1,4 +1,4 @@
-import { fetch } from './platform'
+import { fetch, Blob } from './platform.js'
 import { base58btc } from 'multiformats/bases/base58'
 import * as varint from 'varint'
 import nacl from 'tweetnacl'
@@ -67,11 +67,11 @@ export async function getUploadToken(auth: AuthContext, rootCID: string): Promis
     throw new Error(`request error: [${res.status}]: ${res.statusText}`)
   }
 
-  const body = await res.json() as object
-  if ('token' in body && typeof body['token'] === 'string') {
-    return body['token']
+  const body = await res.json() as { token: string }
+  if (!('token' in body)) {
+    throw new Error('no token in response body')
   }
-  throw new Error('no token in response body')
+  return body.token
 }
 
 async function makePutCarRequestContext(auth: AuthContext, rootCID: string): Promise<RequestContext> {

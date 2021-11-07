@@ -2,6 +2,7 @@
   "name": "metaplex-dotstorage-auth",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -15,14 +16,17 @@
     "@web-std/fetch": "^2.1.2",
     "@web-std/file": "^1.1.4",
     "carbites": "^1.0.6",
+    "files-from-path": "^0.2.1",
     "ipfs-car": "^0.5.9",
     "multiformats": "^9.4.10",
     "p-retry": "^5.0.0",
     "streaming-iterables": "^6.0.0",
+    "ts-command-line-args": "^2.2.0",
     "tweetnacl": "^1.0.3",
     "varint": "^6.0.0"
   },
   "devDependencies": {
+    "ts-node": "^10.4.0",
     "typescript": "^4.4.4"
   }
 }
