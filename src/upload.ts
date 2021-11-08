@@ -1,4 +1,3 @@
-import pRetry from "p-retry";
 import { transform } from "streaming-iterables"
 import { CarReader } from "@ipld/car/lib/reader-browser";
 import { CID } from "multiformats";
@@ -6,7 +5,6 @@ import { TreewalkCarSplitter } from "carbites";
 
 import { packFiles } from "./car.js";
 import { AuthContext, getUploadToken } from "./auth.js";
-import { fetch, Blob } from './platform.js'
 
 
 const MAX_PUT_RETRIES = 1
@@ -92,6 +90,8 @@ abstract class Uploader {
   }
 
   async uploadCar(car: CarReader, root: CID, opts: PutOptions = {}): Promise<CIDString> {
+    const { default: pRetry } = await import('p-retry')
+
     const maxRetries = opts.maxRetries ?? MAX_PUT_RETRIES
     const { onStoredChunk } = opts
 
