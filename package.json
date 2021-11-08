@@ -1,18 +1,20 @@
 {
   "name": "metaplex-dotstorage-auth",
   "version": "1.0.0",
-  "description": "",
+  "description": "A client library for nft.storage designed for metaplex NFT uploads",
   "type": "module",
   "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "files": [
     "dist/**/*"
   ],
   "scripts": {
     "build": "tsc",
+    "prepare": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "yusef@protocol.ai",
   "license": "ISC",
   "dependencies": {
     "@ipld/car": "^3.1.19",
