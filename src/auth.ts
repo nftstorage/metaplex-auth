@@ -1,19 +1,11 @@
-import { fetch, Blob } from './platform.js'
 import { base58btc } from 'multiformats/bases/base58'
 import * as varint from 'varint'
 import nacl from 'tweetnacl'
 
-const HeaderMintKey = "X-Metaplex-Mint-PubKey"
-const HeaderSignature = "X-Metaplex-Mint-Signature"
-
 const TagChain = "chain"
 const TagSolanaCluster = "solana-cluster"
-const SigningDomainPrefix = new TextEncoder().encode("metaplex-pl-dotstorage-auth:")
 
 const MulticodecEd25519Pubkey = varint.encode(0xed)
-
-// TODO: read from config / env var
-const MetaplexAuthEndpoint = new URL("https://us-central1-metaplex-web3storage-dev.cloudfunctions.net/metaplex-auth-dev")
 
 export type SolanaCluster = 'mainnet-beta' | 'devnet'
 
@@ -56,61 +48,59 @@ export function MetaplexAuthWithSecretKey(privkey: Uint8Array, solanaCluster: So
 }
 
 export async function getUploadToken(auth: AuthContext, rootCID: string): Promise<string> {
-  const requestContext = await makePutCarRequestContext(auth, rootCID)
-
-  const res = await fetch(MetaplexAuthEndpoint, {
-    method: 'POST',
-    headers: requestHeaders(requestContext),
-    body: requestBody(requestContext)
-  })
-  if (!res.ok) {
-    throw new Error(`request error: [${res.status}]: ${res.statusText}`)
-  }
-
-  const body = await res.json() as { token: string }
-  if (!('token' in body)) {
-    throw new Error('no token in response body')
-  }
-  return body.token
+  return makeMetaplexStorageJWT(auth, rootCID)
 }
 
-async function makePutCarRequestContext(auth: AuthContext, rootCID: string): Promise<RequestContext> {
+async function makeMetaplexStorageJWT(auth: AuthContext, rootCID: string): Promise<string> {
   const tags = {
     [TagChain]: auth.chain,
     [TagSolanaCluster]: auth.solanaCluster
   }
-  const message = {
+  const req = {
     put: {
       rootCID,
       tags,
     }
   }
-  const messageBytes = new TextEncoder().encode(JSON.stringify(message))
-  const toSign = new Uint8Array([...SigningDomainPrefix, ...messageBytes])
-
-  const mintDID = keyDID(auth.publicKey)
-  const signature = await auth.signMessage(toSign)
-  return { message, messageBytes, mintDID, signature }
-}
-
-function requestHeaders(context: RequestContext): Record<string, string> {
-  const sigMultibase = base58btc.encode(context.signature)
-
-  return {
-    'Content-Type': 'application/json',
-    [HeaderMintKey]: context.mintDID,
-    [HeaderSignature]: sigMultibase,
+  const iss = keyDID(auth.publicKey)
+  const payload = {
+    iss,
+    req
   }
-}
 
-function requestBody(context: RequestContext): Blob {
-  return new Blob([context.messageBytes])
+  const headerB64 = objectToB64URL({ alg: 'EdDSA', typ: 'JWT' })
+  const payloadB64 = objectToB64URL(payload)
+  
+  const encoded = headerB64 + '.' + payloadB64
+  const encodedBytes = new TextEncoder().encode(encoded)
+  const sig = await auth.signMessage(encodedBytes)
+  const sigB64 = b64urlEncode(sig)
+  return encoded + '.' + sigB64
 }
 
 function keyDID(pubkey: Uint8Array): string {
   const keyWithCodec = new Uint8Array([...MulticodecEd25519Pubkey, ...pubkey])
   const mb = base58btc.encode(keyWithCodec)
   return `did:key:${mb}`
+}
+
+function objectToB64URL(o: object): string {
+  const s = new TextEncoder().encode(JSON.stringify(o))
+  return b64urlEncode(s)
+}
+
+function b64urlEncode(bytes: Uint8Array): string {
+  const s = b64Encode(bytes)
+  return s.replace(/=/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+}
+
+function b64Encode(bytes: Uint8Array): string {
+  if (Buffer !== undefined) {
+    return Buffer.from(bytes).toString('base64')
+  }
+  return btoa(String.fromCharCode.apply(null, [...bytes]))
 }
 
 // internal types

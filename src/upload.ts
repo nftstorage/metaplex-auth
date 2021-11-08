@@ -16,7 +16,7 @@ const DEFAULT_GATEWAY_HOST = "https://dweb.link"
 
 function metaplexAuthHeaders(uploadToken: string) {
   return {
-   'Authorization': `X-Metaplex-Bearer ${uploadToken}`
+   'Authorization': `X-Web3-Auth Metaplex ${uploadToken}`
   }
 }
 
