@@ -19,7 +19,12 @@ export interface AuthContext {
   publicKey: Uint8Array
 }
 
-type Signer = (message: Uint8Array) => Promise<Uint8Array>
+export interface UploadCredentials {
+  token: string
+  meta: Record<string, any>
+}
+
+export type Signer = (message: Uint8Array) => Promise<Uint8Array>
 
 export interface RequestContext {
   message: RequestMessage
@@ -47,11 +52,7 @@ export function MetaplexAuthWithSecretKey(privkey: Uint8Array, solanaCluster: So
   return MetaplexAuthWithSigner(signMessage, publicKey, solanaCluster)
 }
 
-export async function getUploadToken(auth: AuthContext, rootCID: string): Promise<string> {
-  return makeMetaplexStorageJWT(auth, rootCID)
-}
-
-async function makeMetaplexStorageJWT(auth: AuthContext, rootCID: string): Promise<string> {
+export async function getUploadCredentials(auth: AuthContext, rootCID: string): Promise<UploadCredentials> {
   const tags = {
     [TagChain]: auth.chain,
     [TagSolanaCluster]: auth.solanaCluster
@@ -75,7 +76,9 @@ async function makeMetaplexStorageJWT(auth: AuthContext, rootCID: string): Promi
   const encodedBytes = new TextEncoder().encode(encoded)
   const sig = await auth.signMessage(encodedBytes)
   const sigB64 = b64urlEncode(sig)
-  return encoded + '.' + sigB64
+  const token = encoded + '.' + sigB64
+  const meta = payload
+  return { token, meta }
 }
 
 function keyDID(pubkey: Uint8Array): string {

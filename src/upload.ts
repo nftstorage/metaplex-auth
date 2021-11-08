@@ -4,17 +4,18 @@ import { CID } from "multiformats";
 import { TreewalkCarSplitter } from "carbites";
 
 import { packFiles } from "./car.js";
-import { AuthContext, getUploadToken } from "./auth.js";
-
+import { AuthContext, getUploadCredentials } from "./auth.js";
+import type { UploadCredentials } from './auth.js';
 
 const MAX_PUT_RETRIES = 1
 const MAX_CONCURRENT_UPLOADS = 3
 const MAX_CHUNK_SIZE = 1024 * 1024 * 10 // chunk to ~10MB CARs
 const DEFAULT_GATEWAY_HOST = "https://dweb.link"
 
-function metaplexAuthHeaders(uploadToken: string) {
+function metaplexAuthHeaders(creds: UploadCredentials) {
   return {
-   'Authorization': `X-Web3-Auth Metaplex ${uploadToken}`
+   'x-web3auth': `Metaplex ${creds.token}`,
+   'x-web3meta': JSON.stringify(creds.meta),
   }
 }
 
@@ -59,9 +60,9 @@ abstract class Uploader {
    * 
    * @param carFile - a Blob containing CAR data, with content type set to `application/car`.
    * @param carRoot - the root CID of the CAR file, as a string.
-   * @param uploadToken - a one-time-use upload token, specific to this root CID.
+   * @param uploadCreds - a one-time-use upload token, specific to this root CID, plus associated metadata.
    */
-  abstract putCarFile(carFile: Blob, carRoot: string, uploadToken: string): Promise<string>
+  abstract putCarFile(carFile: Blob, carRoot: string, uploadCreds: UploadCredentials): Promise<string>
 
   /**
    * Uploads one or more {@link File}s to uploader's backend API.
@@ -96,7 +97,7 @@ abstract class Uploader {
     const { onStoredChunk } = opts
 
     const carRoot = root.toString()
-    const uploadToken = await getUploadToken(this.auth, carRoot)
+    const creds = await getUploadCredentials(this.auth, carRoot)
   
     const chunkUploader = async (carChunk: AsyncIterable<Uint8Array>) => {
       const carParts = []
@@ -106,7 +107,7 @@ abstract class Uploader {
     
       const carFile = new Blob(carParts, { type: 'application/car' })
       const res = await pRetry(
-        () => this.putCarFile(carFile, carRoot, uploadToken),
+        () => this.putCarFile(carFile, carRoot, creds),
         { retries: maxRetries }
       )
       // const res = await this.putCarFile(carFile, carRoot, uploadToken)
@@ -133,10 +134,10 @@ export class NFTStorageUploader extends Uploader {
     this.endpoint = endpoint
   }
 
-  async putCarFile (carFile: Blob, carRoot: string, uploadToken: string): Promise<string> {
+  async putCarFile (carFile: Blob, carRoot: string, uploadCreds: UploadCredentials): Promise<string> {
     const putCarEndpoint = new URL("/upload", this.endpoint)
 
-    const headers = metaplexAuthHeaders(uploadToken)
+    const headers = metaplexAuthHeaders(uploadCreds)
     const request = await fetch(putCarEndpoint.toString(), {
       method: 'POST',
       headers,
@@ -163,10 +164,10 @@ export class Web3StorageUploader extends Uploader {
     this.endpoint = endpoint
   }
 
-  async putCarFile (carFile: Blob, carRoot: string, uploadToken: string): Promise<string> {
+  async putCarFile (carFile: Blob, carRoot: string, uploadCreds: UploadCredentials): Promise<string> {
     const putCarEndpoint = new URL("/car", this.endpoint)
 
-    const headers = metaplexAuthHeaders(uploadToken)
+    const headers = metaplexAuthHeaders(uploadCreds)
     const request = await fetch(putCarEndpoint.toString(), {
       method: 'POST',
       headers,
