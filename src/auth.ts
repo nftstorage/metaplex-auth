@@ -7,7 +7,7 @@ const TagSolanaCluster = "solana-cluster"
 
 const MulticodecEd25519Pubkey = varint.encode(0xed)
 
-export type SolanaCluster = 'mainnet-beta' | 'devnet'
+export type SolanaCluster = string
 
 export interface AuthContext {
   chain: 'solana'
