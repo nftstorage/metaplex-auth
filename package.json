@@ -21,10 +21,10 @@
     }
   },
   "scripts": {
-    "build": "npm run typecheck && npm run build:all",
+    "build": "npm run clean && npm run typecheck && npm run build:all",
     "clean": "rimraf ./dist",
-    "typecheck": "tsc --noEmit",
-    "build:all": "npm run clean && npm run build:esm && npm run build:cjs && npm run build:browser",
+    "typecheck": "tsc",
+    "build:all": "npm run build:esm && npm run build:cjs && npm run build:browser",
     "build:cjs": "mkdirp ./dist && esbuild ./src/index.ts --bundle --format=cjs --platform=node --inject:./src/platform.node.js --target=es2018 --outfile=./dist/index.cjs",
     "build:esm": "mkdirp ./dist && esbuild ./src/index.ts --bundle --format=esm --platform=node --inject:./src/platform.node.js --target=es2018 --outfile=./dist/index.esm.js",
     "build:browser": "mkdirp ./dist && esbuild ./src/index.ts --bundle --format=esm --target=es2018 --outfile=./dist/index.browser.js",
