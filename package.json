@@ -2,7 +2,7 @@
   "name": "metaplex-dotstorage-auth",
   "version": "1.0.0",
   "description": "A client library for nft.storage designed for metaplex NFT uploads",
-  "main": "dist/index/bundle.cjs",
+  "main": "./dist/index.cjs",
   "files": [
     "dist/**/*"
   ],
@@ -13,13 +13,7 @@
       "require": "./dist/index.cjs"
     }
   },
-  "typesVersions": {
-    "*": {
-      "*": [
-        "dist/src/*"
-      ]
-    }
-  },
+  "types": "./dist/src/index.d.ts",
   "scripts": {
     "build": "npm run clean && npm run typecheck && npm run build:all",
     "clean": "rimraf ./dist",
