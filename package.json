@@ -22,6 +22,7 @@
     "build:cjs": "mkdirp ./dist && esbuild ./src/index.ts --bundle --format=cjs --platform=node --inject:./src/platform.node.js --target=es2018 --outfile=./dist/index.cjs",
     "build:esm": "mkdirp ./dist && esbuild ./src/index.ts --bundle --format=esm --platform=node --inject:./src/platform.node.js --target=es2018 --outfile=./dist/index.esm.js",
     "build:browser": "mkdirp ./dist && esbuild ./src/index.ts --bundle --format=esm --target=es2018 --outfile=./dist/index.browser.js",
+    "build:cli": "mkdirp ./dist && esbuild ./src/cli.ts --bundle --format=cjs --platform=node --inject:./src/platform.node.js --target=es2018 --outfile=./dist/cli.js",
     "prepare": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
