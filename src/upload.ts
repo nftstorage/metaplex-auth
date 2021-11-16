@@ -3,9 +3,9 @@ import { CarReader } from "@ipld/car/lib/reader-browser";
 import { CID } from "multiformats";
 import { TreewalkCarSplitter } from "carbites";
 
-import { packFiles } from "./car.js";
-import { AuthContext, getUploadCredentials } from "./auth.js";
-import type { UploadCredentials } from './auth.js';
+import { packFiles } from "./car";
+import { AuthContext, getUploadCredentials } from "./auth";
+import type { UploadCredentials } from './auth';
 
 const MAX_PUT_RETRIES = 1
 const MAX_CONCURRENT_UPLOADS = 3
@@ -135,7 +135,7 @@ export class NFTStorageUploader extends Uploader {
   }
 
   async putCarFile (carFile: Blob, carRoot: string, uploadCreds: UploadCredentials): Promise<string> {
-    const putCarEndpoint = new URL("/upload", this.endpoint)
+    const putCarEndpoint = new URL("/metaplex/upload", this.endpoint)
 
     const headers = metaplexAuthHeaders(uploadCreds)
     const request = await fetch(putCarEndpoint.toString(), {
