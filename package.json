@@ -30,14 +30,12 @@
   "author": "yusef@protocol.ai",
   "license": "ISC",
   "dependencies": {
-    "@ipld/car": "^3.1.19",
     "@solana/web3.js": "^1.30.2",
     "@web-std/fetch": "^2.1.2",
     "@web-std/file": "^1.1.4",
-    "carbites": "^1.0.6",
     "files-from-path": "^0.2.1",
-    "ipfs-car": "^0.5.9",
     "multiformats": "^9.4.10",
+    "nft.storage": "^4.0.0",
     "p-retry": "^5.0.0",
     "streaming-iterables": "^6.0.0",
     "ts-command-line-args": "^2.2.0",
@@ -45,7 +43,6 @@
     "varint": "^6.0.0"
   },
   "devDependencies": {
-    "@types/jsonwebtoken": "^8.5.5",
     "esbuild": "^0.13.12",
     "mkdirp": "^1.0.4",
     "rimraf": "^3.0.2",

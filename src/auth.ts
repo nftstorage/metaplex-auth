@@ -52,7 +52,7 @@ export function MetaplexAuthWithSecretKey(privkey: Uint8Array, solanaCluster: So
   return MetaplexAuthWithSigner(signMessage, publicKey, solanaCluster)
 }
 
-export async function getUploadCredentials(auth: AuthContext, rootCID: string): Promise<UploadCredentials> {
+export async function makeMetaplexUploadToken(auth: AuthContext, rootCID: string): Promise<string> {
   const tags = {
     [TagChain]: auth.chain,
     [TagSolanaCluster]: auth.solanaCluster
@@ -77,8 +77,7 @@ export async function getUploadCredentials(auth: AuthContext, rootCID: string): 
   const sig = await auth.signMessage(encodedBytes)
   const sigB64 = b64urlEncode(sig)
   const token = encoded + '.' + sigB64
-  const meta = payload
-  return { token, meta }
+  return token
 }
 
 function keyDID(pubkey: Uint8Array): string {
