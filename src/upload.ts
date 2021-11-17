@@ -76,7 +76,9 @@ abstract class Uploader {
     const { car, root } = await packFiles(...files)
     const rootCID = await this.uploadCar(car, root, opts)
 
-    const filenames = files.map(f => f.name)
+    // trim leading slashes from filenames
+    const filenames = files.map(f => f.name.replace(new RegExp('^\\/'), ''))
+    
     const ipfsURIs = () => filenames.map(n => `ipfs://${rootCID}/${encodeURIComponent(n)}`)
     const gatewayURLs = (host: string = DEFAULT_GATEWAY_HOST) => 
       filenames.map(n => new URL(`/ipfs/${rootCID}/${encodeURIComponent(n)}`, host))
