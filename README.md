@@ -7,29 +7,20 @@ See [SPEC.md](./spec.md) for details about the authentication scheme.
 ## Usage
 
 ```js
-import { MetaplexAuthWithSecretKey, NFTStorageUploader } from 'metaplex-dotstorage-auth'
+import { MetaplexAuthWithSecretKey, NFTStorageMetaplexor } from 'metaplex-dotstorage-auth'
 import { getFilesFromPath } from 'files-from-path'
 
 async function upload(filenames) {
   const key = await loadKeyFromSomewhere()
   const auth = MetaplexAuthWithSecretKey(key, 'mainnet-beta') // or 'devnet'
-  const uploader = NFTStorageUploader(auth)
-
+  const client = new NFTStorageMetaplexor({ auth })
   const files = await getFilesFromPath(filenames)
 
   console.log(`uploading ${files.length} files...`)
-  const result = await uploader.uploadFiles(files, {
-    onStoredChunk: (size) => console.log(`uploaded chunk of ${size} bytes`)
-  })
+  const cid = await client.storeDirectory(files)
 
-  console.log(result)
-  // {
-  //   "rootCID": "bafy123...",
-  //   "filenames": [
-  //     "file1.json"
-  //     "file2.png"
-  //   ]
-  // }
+  console.log(cid)
+  // => "bafy123..."
 }
 ```
 
