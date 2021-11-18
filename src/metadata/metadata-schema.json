@@ -1,0 +1,104 @@
+{
+	"$schema": "https://json-schema.org/draft/2019-09/schema",
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "symbol": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "seller_fee_basis_points": {
+        "type": "number"
+      },
+      "image": {
+        "type": "string"
+      },
+      "animation_url": {
+        "type": "string"
+      },
+      "external_url": {
+        "type": "string"
+      },
+      "attributes": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "trait_type": {
+              "type": "string"
+            },
+            "value": {
+              "anyOf": [
+                { "type": "string" },
+                { "type": "number" }
+              ]
+            },
+            "display_type": {
+              "type": "string"
+            },
+            "max_value": {
+              "type": "number"
+            },
+            "trait_count": {
+              "type": "number"
+            }
+          }
+        }
+      },
+      "properties": {
+        "type": "object",
+        "properties": {
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+              	"uri": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                },
+                "cdn": {
+                  "type": "boolean"
+                }
+              }
+            }
+          },
+          "category": {
+            "type": "string"
+           },
+           "creators": {
+             "type": "array",
+             "items": {
+               "type": "object",
+               "properties": {
+                 "address": {
+                   "type": "string"
+                  },
+                  "share": {
+                    "type": "number"
+                  }
+               }
+             }
+           }
+         }
+      },
+      "collection": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "family": {
+            "type": "string"
+          }
+        }
+      }
+    },
+      "required": ["name", "symbol"]
+}

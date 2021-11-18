@@ -23,8 +23,8 @@
     "build:esm": "mkdirp ./dist && esbuild ./src/index.ts --bundle --format=esm --platform=node --inject:./src/platform.node.js --target=es2018 --outfile=./dist/index.esm.js",
     "build:browser": "mkdirp ./dist && esbuild ./src/index.ts --bundle --format=esm --target=es2018 --outfile=./dist/index.browser.js",
     "build:cli": "mkdirp ./dist && esbuild ./src/cli.ts --bundle --format=cjs --platform=node --inject:./src/platform.node.js --target=es2018 --outfile=./dist/cli.js",
-    "prepare": "npm run build",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prepare": "npm run test && npm run build",
+    "test": "mocha"
   },
   "keywords": [],
   "author": "yusef@protocol.ai",
@@ -33,6 +33,7 @@
     "@solana/web3.js": "^1.30.2",
     "@web-std/fetch": "^2.1.2",
     "@web-std/file": "^1.1.4",
+    "ajv": "^8.8.1",
     "files-from-path": "^0.2.1",
     "multiformats": "^9.4.10",
     "nft.storage": "^4.0.0",
@@ -43,8 +44,13 @@
     "varint": "^6.0.0"
   },
   "devDependencies": {
+    "@types/chai": "^4.2.22",
+    "@types/mocha": "^9.0.0",
+    "@types/node": "^16.11.8",
+    "chai": "^4.3.4",
     "esbuild": "^0.13.12",
     "mkdirp": "^1.0.4",
+    "mocha": "^9.1.3",
     "rimraf": "^3.0.2",
     "ts-node": "^10.4.0",
     "typescript": "^4.4.4"
