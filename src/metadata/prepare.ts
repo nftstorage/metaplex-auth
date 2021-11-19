@@ -2,12 +2,15 @@ import { NFTStorage, CarReader } from "nft.storage"
 import type { CID } from 'multiformats'
 
 import { MetaplexMetadata, FileDescription, ensureValidMetadata } from './schema'
+import { makeGatewayURL, makeIPFSURI } from '../utils'
 
-const GATEWAY_HOST = 'https://dweb.link'
-type EncodedCar = { car: CarReader, cid: CID }
+export type EncodedCar = { car: CarReader, cid: CID }
 
 export interface PackagedNFT {
   metadata: MetaplexMetadata,  
+  metadataGatewayURL: string,
+  metadataURI: string,
+
   metadataCar: EncodedCar,
   assetCar: EncodedCar,
 }
@@ -22,11 +25,15 @@ export async function prepareMetaplexNFT(metadata: Record<string, any>, imageFil
   const linkedMetadata = replaceFileRefsWithIPFSLinks(validated, imageFile.name, filenames, encodedAssets.cid.toString())
   const metadataFile = new File([JSON.stringify(linkedMetadata)], 'metadata.json')
   const encodedMetadata = await NFTStorage.encodeDirectory([metadataFile])
+  const metadataGatewayURL = makeGatewayURL(encodedMetadata.cid.toString(), 'metadata.json')
+  const metadataURI = makeIPFSURI(encodedMetadata.cid.toString(), 'metadata.json')
 
   return {
     metadata: linkedMetadata,
     metadataCar: encodedMetadata,
     assetCar: encodedAssets,
+    metadataGatewayURL,
+    metadataURI,
   }
 }
 
@@ -47,7 +54,7 @@ function replaceFileRefsWithIPFSLinks(metadata: MetaplexMetadata, imageFilename:
         },
         {
           ...f,
-          uri: makeIPFSUri(assetRootCID, f.uri),
+          uri: makeIPFSURI(assetRootCID, f.uri),
           cdn: false,
         }
       ]
@@ -70,16 +77,4 @@ function replaceFileRefsWithIPFSLinks(metadata: MetaplexMetadata, imageFilename:
       files,
     }
   }
-}
-
-
-function makeGatewayURL(cid: string, path: string): string {
-  const base = new URL(`/ipfs/${cid}`, GATEWAY_HOST)
-  const u = new URL(path, base)
-  return u.toString()
-}
-
-function makeIPFSUri(cid: string, path: string): string {
-  const u = new URL(path, `ipfs://${cid}`)
-  return u.toString()
 }

@@ -2,10 +2,7 @@ import { File } from 'nft.storage'
 import { ensureValidMetadata } from './schema'
 import { prepareMetaplexNFT } from './prepare'
 import type { PackagedNFT } from './prepare'
-
-
-const isBrowser =
-  typeof window !== 'undefined' && typeof window.document !== 'undefined'
+import { isBrowser } from '../utils'
 
 async function fileExists(filepath: string): Promise<boolean> {
   if (isBrowser) {
