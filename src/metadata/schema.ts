@@ -1,7 +1,7 @@
-import Ajv, {JSONSchemaType} from "ajv"
+import Ajv, { JSONSchemaType, DefinedError, ErrorObject } from "ajv"
 const ajv = new Ajv()
 
-interface Attribute {
+export interface Attribute {
     trait_type: string,
     value: string | number,
     display_type?: string,
@@ -9,18 +9,18 @@ interface Attribute {
     trait_count?: number,
 }
 
-interface FileDescription {
+export interface FileDescription {
     uri: string,
     type: string,
     cdn?: boolean,
 }
 
-interface CreatorInfo {
+export interface CreatorInfo {
     address: string,
     share: number,
 }
 
-interface CollectionInfo {
+export interface CollectionInfo {
     name: string,
     family: string,
 }
@@ -36,11 +36,12 @@ export interface MetaplexMetadata {
     attributes?: Attribute[],
     collection?: CollectionInfo,
     properties: {
-        category?: string,
-        files: Array<FileDescription>,
-        creators: CreatorInfo[]
+      category?: string,
+      files: Array<FileDescription>,
+      creators: CreatorInfo[],
     }
-}
+  }
+
 
 
 const fileSchema: JSONSchemaType<FileDescription> = {
@@ -116,7 +117,8 @@ export const metadataSchema: JSONSchemaType<MetaplexMetadata> = {
               items: creatorSchema,
             }
           },
-          required: [ 'files', 'creators' ]
+          additionalProperties: true,
+          required: [ 'files', 'creators' ],
         },
         collection: {
           type: "object",
@@ -132,5 +134,32 @@ export const metadataSchema: JSONSchemaType<MetaplexMetadata> = {
 }
 
 export const validateMetadata = ajv.compile(metadataSchema)
+
+export class ValidationError extends Error {
+  constructor(errors: ErrorObject[]) {
+    const messages: string[] = []
+    for (const err of errors as DefinedError[]) {
+      switch (err.keyword) {
+        case 'required':
+          messages.push(`required property ${err.params.missingProperty} missing`)
+          break
+        case 'propertyNames':
+          messages.push(`invalid property name: ${err.params.propertyName}`)
+          break
+        default:
+          messages.push(err.message || 'unknown error')
+      }
+    }
+    const message = 'metadata had validation errors: \n' + messages.join('\n')
+    super(message)
+  }
+}
+
+export function ensureValidMetadata(m: Record<string, any>): MetaplexMetadata {
+  if (!validateMetadata(m)) {
+    throw new ValidationError(validateMetadata.errors)
+  }
+  return m
+}
 
 // export const parseMetadata = ajv.compileParser(metadataSchema)
