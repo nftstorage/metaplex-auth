@@ -2,7 +2,7 @@ import { describe, it } from 'mocha'
 import { expect } from 'chai'
 
 import fixtures from './fixtures/metadata.json'
-import { validateMetadata } from '../src/metadata/schema'
+import { validateMetadata } from '../src/metadata'
 
 describe('validateMetadata', () => {
   it('validates a valid metaplex json manifest', () => {

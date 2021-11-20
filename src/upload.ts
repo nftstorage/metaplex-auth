@@ -1,21 +1,46 @@
 import { AuthContext, makeMetaplexUploadToken, Signer, MetaplexAuthWithSecretKey, MetaplexAuthWithSigner, SolanaCluster } from './auth'
 import { CarReader, NFTStorage } from 'nft.storage'
 import { PackagedNFT } from './metadata/prepare'
-import { loadNFTFromFilesystem } from './metadata/load'
+import { loadNFTFromFilesystem } from './nft/load'
 import { isBrowser } from './utils'
 import type { CID } from 'multiformats'
 
 const DEFAULT_ENDPOINT = new URL('https://api.nft.storage')
 
+/** An IPFS Content Identifier (CID) in string form */
 type CIDString = string
 
+/**
+ * Information required to reach the NFT.Storage service and prepare upload tokens.
+ */
+export type ServiceContext = { auth: AuthContext, endpoint?: URL }
+
+/**
+ * Return value of a successful call to {@link NFTStorageMetaplexor.storePreparedNFT} or
+ * {@link NFTStorageMetaplexor.storeNFTFromFilesystem}.
+ */
 export interface StoreNFTResult {
+  /** CID of the IPFS directory containing the metadata.json file for the NFT */
   metadataRootCID: CIDString,
+
+  /** CID of the IPFS directory containing all assets bundled with the NFT (including main image) */
   assetRootCID: CIDString,
+
+  /** IPFS HTTP gateway URL to the metadata json file */
   metadataGatewayURL: string,
+
+  /** ipfs:// URI for metadata json file */
   metadataURI: string,
 }
 
+/**
+ * A bespoke client for [NFT.Storage](https://nft.storage) that uses Solana private keys
+ * to authenticate uploads of NFT assets and metadata for Metaplex NFT creators.
+ * 
+ * This client uses a metaplex-specific endpoint (https://api.nft.storage/metaplex/upload)
+ * that requires a request-specific JWT token. See SPEC.md in this repo for more details.
+ * 
+ */
 export class NFTStorageMetaplexor {
   static #initialized: boolean
   auth: AuthContext
@@ -35,7 +60,7 @@ export class NFTStorageMetaplexor {
     this.#initialized = true
   }
 
-  constructor({ auth, endpoint }: { auth: AuthContext, endpoint?: URL }) {
+  constructor({ auth, endpoint }: ServiceContext) {
     this.auth = auth
     this.endpoint = endpoint || DEFAULT_ENDPOINT
   }
@@ -75,15 +100,27 @@ export class NFTStorageMetaplexor {
     return new NFTStorageMetaplexor({ auth, endpoint })
   }
 
-  static async storeDirectory(opts: { auth: AuthContext, endpoint?: URL }, files: Iterable<File>): Promise<CIDString> {
+  /**
+   * Stores one or more files with NFT.Storage, bundling them into an IPFS directory.
+   * 
+   * If the `files` contain directory paths in their `name`s, they MUST all share the same
+   * parent directory. E.g. 'foo/hello.txt' and 'foo/thing.json' is fine, 
+   * but 'foo/hello.txt' and 'bar/thing.json' will fail.
+   * 
+   * @param context 
+   * @param files 
+   * @returns CID string of the IPFS directory containing all uploaded files.
+   */
+  static async storeDirectory(context: ServiceContext, files: Iterable<File>): Promise<CIDString> {
     this.#init()
     const { cid, car } = await NFTStorage.encodeDirectory(files)
-    return this.storeCar(opts, cid, car)
+    return this.storeCar(context, cid, car)
   }
 
-  static async storeCar(opts: { auth: AuthContext, endpoint?: URL }, cid: CID, car: CarReader) {
-    const { auth } = opts
-    const baseEndpoint = opts.endpoint || DEFAULT_ENDPOINT
+  static async storeCar(context: ServiceContext, cid: CID, car: CarReader) {
+    this.#init()
+    const { auth } = context
+    const baseEndpoint = context.endpoint || DEFAULT_ENDPOINT
 
     // NFTStorage.storeCar adds `/upload` to the base endpoint url.
     // We want our request to go to `/metaplex/upload`, so we add the
@@ -93,11 +130,11 @@ export class NFTStorageMetaplexor {
     return NFTStorage.storeCar({ endpoint, token }, car)
   }
 
-  static async storePreparedNFT(opts: { auth: AuthContext, endpoint?: URL }, nft: PackagedNFT): Promise<StoreNFTResult> {
+  static async storePreparedNFT(context: ServiceContext, nft: PackagedNFT): Promise<StoreNFTResult> {
     this.#init()
 
-    const metadataRootCID = await this.storeCar(opts, nft.metadataCar.cid, nft.metadataCar.car)
-    const assetRootCID = await this.storeCar(opts, nft.assetCar.cid, nft.assetCar.car)
+    const metadataRootCID = await this.storeCar(context, nft.encodedMetadata.cid, nft.encodedMetadata.car)
+    const assetRootCID = await this.storeCar(context, nft.encodedAssets.cid, nft.encodedAssets.car)
     const { metadataGatewayURL, metadataURI } = nft
 
     return {
@@ -108,25 +145,27 @@ export class NFTStorageMetaplexor {
     }
   }
 
-  static async storeNFTFromFilesystem(opts: { auth: AuthContext, endpoint?: URL }, metadataFilePath: string, imageFilePath?: string): Promise<StoreNFTResult> {
+  static async storeNFTFromFilesystem(context: ServiceContext, metadataFilePath: string, imageFilePath?: string): Promise<StoreNFTResult> {
     if (isBrowser) {
       throw new Error(`storeNFTFromFilesystem is only available on node.js`)
     }
 
     const nft = await loadNFTFromFilesystem(metadataFilePath, imageFilePath)
-    return this.storePreparedNFT(opts, nft)
+    return this.storePreparedNFT(context, nft)
   }
 
-  // -- instance methods
+  // -- instance methods are just "sugar" around the static methods, using `this` as the ServiceContext parameter
+
+  async storeCar(cid: CID, car: CarReader) {
+    return NFTStorageMetaplexor.storeCar(this, cid, car)
+  }
 
   async storeDirectory(files: Iterable<File>): Promise<CIDString> {
-    const { auth, endpoint } = this
-    return NFTStorageMetaplexor.storeDirectory({ auth, endpoint }, files)
+    return NFTStorageMetaplexor.storeDirectory(this, files)
   }
 
   async storePreparedNFT(nft: PackagedNFT): Promise<StoreNFTResult> {
-    const { auth, endpoint } = this
-    return NFTStorageMetaplexor.storePreparedNFT({ auth, endpoint }, nft)
+    return NFTStorageMetaplexor.storePreparedNFT(this, nft)
   }
 
 }

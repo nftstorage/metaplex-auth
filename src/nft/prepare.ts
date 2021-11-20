@@ -1,7 +1,7 @@
-import { NFTStorage, CarReader } from "nft.storage"
+import { NFTStorage, CarReader, File } from "nft.storage"
 import type { CID } from 'multiformats'
 
-import { MetaplexMetadata, FileDescription, ensureValidMetadata } from './schema'
+import { MetaplexMetadata, FileDescription, ensureValidMetadata } from '../metadata'
 import { makeGatewayURL, makeIPFSURI } from '../utils'
 
 export type EncodedCar = { car: CarReader, cid: CID }
@@ -11,18 +11,27 @@ export interface PackagedNFT {
   metadataGatewayURL: string,
   metadataURI: string,
 
-  metadataCar: EncodedCar,
-  assetCar: EncodedCar,
+  encodedMetadata: EncodedCar,
+  encodedAssets: EncodedCar,
 }
 
+/**
+ * 
+ * @param metadata a JS object containing (hopefully) valid Metaplex NFT metadata
+ * @param imageFile a File object containing image data. 
+ * @param additionalAssetFiles 
+ * @returns 
+ */
 export async function prepareMetaplexNFT(metadata: Record<string, any>, imageFile: File, ...additionalAssetFiles: File[]): Promise<PackagedNFT> {
   const validated = ensureValidMetadata(metadata)
 
   const assetFiles = [imageFile, ...additionalAssetFiles]
   const encodedAssets = await NFTStorage.encodeDirectory(assetFiles)
-  const filenames = additionalAssetFiles.map(f => f.name)
 
-  const linkedMetadata = replaceFileRefsWithIPFSLinks(validated, imageFile.name, filenames, encodedAssets.cid.toString())
+  const imageFilename = imageFile.name || 'image.png'
+  const additionalFilenames = additionalAssetFiles.map(f => f.name)
+
+  const linkedMetadata = replaceFileRefsWithIPFSLinks(validated, imageFilename, additionalFilenames, encodedAssets.cid.toString())
   const metadataFile = new File([JSON.stringify(linkedMetadata)], 'metadata.json')
   const encodedMetadata = await NFTStorage.encodeDirectory([metadataFile])
   const metadataGatewayURL = makeGatewayURL(encodedMetadata.cid.toString(), 'metadata.json')
@@ -30,8 +39,8 @@ export async function prepareMetaplexNFT(metadata: Record<string, any>, imageFil
 
   return {
     metadata: linkedMetadata,
-    metadataCar: encodedMetadata,
-    assetCar: encodedAssets,
+    encodedMetadata,
+    encodedAssets,
     metadataGatewayURL,
     metadataURI,
   }

@@ -1,5 +1,4 @@
-import Ajv, { JSONSchemaType, DefinedError, ErrorObject } from "ajv"
-const ajv = new Ajv()
+import { JSONSchemaType } from "ajv"
 
 export interface Attribute {
     trait_type: string,
@@ -20,11 +19,17 @@ export interface CreatorInfo {
     share: number,
 }
 
+/**
+ * See https://docs.metaplex.com/nft-standard#collections
+ */
 export interface CollectionInfo {
     name: string,
     family: string,
 }
 
+/**
+ * Interface for valid Metaplex NFT metadata, as defined at https://docs.metaplex.com/nft-standard.
+ */
 export interface MetaplexMetadata {
     name: string,
     symbol: string,
@@ -132,34 +137,3 @@ export const metadataSchema: JSONSchemaType<MetaplexMetadata> = {
     },
     required: [ "name", "symbol", "seller_fee_basis_points", "image", "properties" ]
 }
-
-export const validateMetadata = ajv.compile(metadataSchema)
-
-export class ValidationError extends Error {
-  constructor(errors: ErrorObject[]) {
-    const messages: string[] = []
-    for (const err of errors as DefinedError[]) {
-      switch (err.keyword) {
-        case 'required':
-          messages.push(`required property ${err.params.missingProperty} missing`)
-          break
-        case 'propertyNames':
-          messages.push(`invalid property name: ${err.params.propertyName}`)
-          break
-        default:
-          messages.push(err.message || 'unknown error')
-      }
-    }
-    const message = 'metadata had validation errors: \n' + messages.join('\n')
-    super(message)
-  }
-}
-
-export function ensureValidMetadata(m: Record<string, any>): MetaplexMetadata {
-  if (!validateMetadata(m)) {
-    throw new ValidationError(validateMetadata.errors)
-  }
-  return m
-}
-
-// export const parseMetadata = ajv.compileParser(metadataSchema)
