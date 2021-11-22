@@ -2,7 +2,7 @@
 
 This repo contains a client library for uploading data to [NFT.Storage](https://nft.storage) using a signature from a solana private key to authenticate the request.
 
-See [SPEC.md](./spec.md) for details about the authentication scheme.
+See [SPEC.md](./SPEC.md) for details about the authentication scheme.
 
 ## Usage
 
