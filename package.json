@@ -1,11 +1,14 @@
 {
-  "name": "metaplex-auth",
+  "name": "@nftstorage/metaplex-auth",
   "version": "0.1.0",
   "description": "A client library for nft.storage designed for metaplex NFT uploads",
   "main": "./dist/index.cjs",
   "files": [
     "dist/**/*"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": {
       "browser": "./dist/index.browser.js",
