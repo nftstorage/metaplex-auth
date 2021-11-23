@@ -1,13 +1,25 @@
-# metaplex-dotstorage-auth
+# metaplex-auth
 
 This repo contains a client library for uploading data to [NFT.Storage](https://nft.storage) using a signature from a solana private key to authenticate the request.
 
 See [SPEC.md](./SPEC.md) for details about the authentication scheme.
 
+## Install
+
+```
+npm install @nftstorage/metaplex-auth
+```
+
+or
+
+```
+yarn add @nftstorage/metaplex-auth
+```
+
 ## Usage
 
 ```js
-import { MetaplexAuthWithSecretKey, NFTStorageUploader } from 'metaplex-dotstorage-auth'
+import { MetaplexAuthWithSecretKey, NFTStorageUploader } from '@nftstorage/metaplex-auth'
 import { getFilesFromPath } from 'files-from-path'
 
 async function upload(filenames) {
