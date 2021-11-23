@@ -55,8 +55,7 @@ abstract class Uploader {
   /**
    * Uploads a Blob containing data of type `application/car` to this Uploader's API.
    * 
-   * Must be defined in derived classes. See {@link NFTStorageUploader.putCarFile} and
-   * {@link Web3StorageUploader.putCarFile}.
+   * Must be defined in derived classes. See {@link NFTStorageUploader.putCarFile}.
    * 
    * @param carFile - a Blob containing CAR data, with content type set to `application/car`.
    * @param carRoot - the root CID of the CAR file, as a string.
@@ -156,34 +155,3 @@ export class NFTStorageUploader extends Uploader {
     return carRoot
   }
 }
-
-
-export class Web3StorageUploader extends Uploader {
-  endpoint: string
-
-  constructor(auth: AuthContext, endpoint: string = "https://api.web3.storage") {
-    super(auth)
-    this.endpoint = endpoint
-  }
-
-  async putCarFile (carFile: Blob, carRoot: string, uploadCreds: UploadCredentials): Promise<string> {
-    const putCarEndpoint = new URL("/car", this.endpoint)
-
-    const headers = metaplexAuthHeaders(uploadCreds)
-    const request = await fetch(putCarEndpoint.toString(), {
-      method: 'POST',
-      headers,
-      body: carFile
-    })
-    const res = await request.json() as { message?: string, cid?: string }
-    if (!request.ok) {
-      throw new Error(res.message)
-    }
-
-    if (res.cid !== carRoot) {
-      throw new Error(`root CID mismatch, expected: ${carRoot}, received: ${res.cid}`)
-    }
-    return carRoot
-  }
-}
-
