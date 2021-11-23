@@ -1,6 +1,6 @@
 {
-  "name": "metaplex-dotstorage-auth",
-  "version": "1.0.0",
+  "name": "metaplex-auth",
+  "version": "0.1.0",
   "description": "A client library for nft.storage designed for metaplex NFT uploads",
   "main": "./dist/index.cjs",
   "files": [
