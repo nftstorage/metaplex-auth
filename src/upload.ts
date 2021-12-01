@@ -120,8 +120,8 @@ export class NFTStorageMetaplexor {
    * parent directory. E.g. 'foo/hello.txt' and 'foo/thing.json' is fine,
    * but 'foo/hello.txt' and 'bar/thing.json' will fail.
    *
-   * @param context
-   * @param files
+   * @param context information required to authenticate uploads
+   * @param files an iterable of File objects to be uploaded
    * @returns CID string of the IPFS directory containing all uploaded files.
    */
   static async storeDirectory(
@@ -133,6 +133,14 @@ export class NFTStorageMetaplexor {
     return this.storeCar(context, cid, car)
   }
 
+  /**
+   * Stores a Content Archive (CAR) containing content addressed data.
+   *
+   * @param context information required to authenticate uploads
+   * @param cid the root CID of the CAR.
+   * @param car a CarReader that supplies CAR data. Must have a single root CID that matches the `cid` param.
+   * @returns a Promise that resolves to the uploaded CID, as a CIDv1 string.
+   */
   static async storeCar(context: ServiceContext, cid: CID, car: CarReader) {
     this.#init()
     const { auth } = context
@@ -146,6 +154,20 @@ export class NFTStorageMetaplexor {
     return NFTStorage.storeCar({ endpoint, token }, car)
   }
 
+  /**
+   * Stores a {@link PackagedNFT} object with NFT.Storage.
+   *
+   * Uploads the CARs contained in the PackagedNFT object and returns an
+   * object containing the root CID of each CAR and URLs to the uploaded
+   * NFT metadata.
+   *
+   * See {@link prepareMetaplexNFT} for creating PackagedNFT instances from
+   * File objects, or {@link loadNFTFromFilesystem} for loading from disk (node.js only).
+   *
+   * @param context information required to authenticate uploads
+   * @param nft a {@link PackagedNFT} object containing NFT assets and metadata
+   * @returns a {@link StoreNFTResult} object containing the CIDs and URLs for the stored NFT
+   */
   static async storePreparedNFT(
     context: ServiceContext,
     nft: PackagedNFT
@@ -172,6 +194,17 @@ export class NFTStorageMetaplexor {
     }
   }
 
+  /**
+   * Loads an NFT from disk and stores it with NFT.Storage. Node.js only!
+   *
+   * Uses {@link loadNFTFromFilesystem} to load NFT data and stores with
+   * {@link storePreparedNFT}.
+   *
+   * @param context information required to authenticate uploads
+   * @param metadataFilePath path to metadata.json file
+   * @param imageFilePath optional path to image file. If not provided, the image will be located using the heuristics described in {@link loadNFTFromFilesystem}.
+   * @returns a {@link StoreNFTResult} object containing the CIDs and URLs for the stored NFT
+   */
   static async storeNFTFromFilesystem(
     context: ServiceContext,
     metadataFilePath: string,
@@ -187,18 +220,58 @@ export class NFTStorageMetaplexor {
 
   // -- instance methods are just "sugar" around the static methods, using `this` as the ServiceContext parameter
 
+  /**
+   * Stores a Content Archive (CAR) containing content addressed data.
+   *
+   * @param cid the root CID of the CAR.
+   * @param car a CarReader that supplies CAR data. Must have a single root CID that matches the `cid` param.
+   * @returns a Promise that resolves to the uploaded CID, as a CIDv1 string.
+   */
   async storeCar(cid: CID, car: CarReader) {
     return NFTStorageMetaplexor.storeCar(this, cid, car)
   }
 
+  /**
+   * Stores one or more files with NFT.Storage, bundling them into an IPFS directory.
+   *
+   * If the `files` contain directory paths in their `name`s, they MUST all share the same
+   * parent directory. E.g. 'foo/hello.txt' and 'foo/thing.json' is fine,
+   * but 'foo/hello.txt' and 'bar/thing.json' will fail.
+   *
+   * @param files an iterable of File objects to be uploaded
+   * @returns CID string of the IPFS directory containing all uploaded files.
+   */
   async storeDirectory(files: Iterable<File>): Promise<CIDString> {
     return NFTStorageMetaplexor.storeDirectory(this, files)
   }
 
+  /**
+   * Stores a {@link PackagedNFT} object with NFT.Storage.
+   *
+   * Uploads the CARs contained in the PackagedNFT object and returns an
+   * object containing the root CID of each CAR and URLs to the uploaded
+   * NFT metadata.
+   *
+   * See {@link prepareMetaplexNFT} for creating PackagedNFT instances from
+   * File objects, or {@link loadNFTFromFilesystem} for loading from disk (node.js only).
+   *
+   * @param nft a {@link PackagedNFT} object containing NFT assets and metadata
+   * @returns a {@link StoreNFTResult} object containing the CIDs and URLs for the stored NFT
+   */
   async storePreparedNFT(nft: PackagedNFT): Promise<StoreNFTResult> {
     return NFTStorageMetaplexor.storePreparedNFT(this, nft)
   }
 
+  /**
+   * Loads an NFT from disk and stores it with NFT.Storage. Node.js only!
+   *
+   * Uses {@link loadNFTFromFilesystem} to load NFT data and stores with
+   * {@link storePreparedNFT}.
+   *
+   * @param metadataFilePath path to metadata.json file
+   * @param imageFilePath optional path to image file. If not provided, the image will be located using the heuristics described in {@link loadNFTFromFilesystem}.
+   * @returns a {@link StoreNFTResult} object containing the CIDs and URLs for the stored NFT
+   */
   async storeNFTFromFilesystem(
     metadataFilePath: string,
     imageFilePath?: string

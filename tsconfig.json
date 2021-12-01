@@ -63,5 +63,6 @@
     "forceConsistentCasingInFileNames": true /* Disallow inconsistently-cased references to the same file. */,
     "resolveJsonModule": true /* allow importing json files */
   },
-  "include": ["src", "test"]
+  "include": ["src", "test"],
+  "files": ["test/fixtures/metadata.json"]
 }
