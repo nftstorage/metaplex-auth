@@ -11,9 +11,9 @@ This system was designed in late 2021 as part of Protocol Labs efforts to ensure
 
 Our goal with the authentication system is to allow anyone with a valid Solana account to use NFT.Storage without any prior authorization or coordination. In other words, there's no need to create an account at https://nft.storage ahead of time.
 
-Instead, a user can prepare a JWT token using the `EdDSA` signature scheme and the signing key for their mint account. The details of constructing and signing the JWT are described in [Token details](#token-details) later in this document. 
+Instead, a user can prepare a JWT token using the `EdDSA` signature scheme and the signing key for their mint account. The details of constructing and signing the JWT are described in [Token details](#token-details) later in this document.
 
-Inside the JWT is a small payload containing the user's public key and a "request description" that captures the intent of the request. 
+Inside the JWT is a small payload containing the user's public key and a "request description" that captures the intent of the request.
 
 To create the JWT, the user will need access to their Solana private key or a [wallet adapter](https://github.com/solana-labs/wallet-adapter) supporting the `signMessage` method (some supported wallets are listed [here](https://github.com/solana-labs/wallet-adapter/blob/master/FAQ.md#how-can-i-sign-and-verify-messages)).
 
@@ -35,15 +35,15 @@ An example token payload looks like this:
 ```json
 {
   "iss": "did:key:z6Mkh74NGBSqQGqeKa2wVuJyRJ1ZJwPngHPg9V6DY2qnVnA5",
-    "req": {
-      "put": {
-          "rootCID": "bafkreifeqjorwymdmh77ars6tbrtno74gntsdcvqvcycucidebiri2e7qy",
-          "tags": { 
-            "chain": "solana",
-            "solana-cluster": "devnet" 
-          },
-       },
-    },
+  "req": {
+    "put": {
+      "rootCID": "bafkreifeqjorwymdmh77ars6tbrtno74gntsdcvqvcycucidebiri2e7qy",
+      "tags": {
+        "chain": "solana",
+        "solana-cluster": "devnet"
+      }
+    }
+  }
 }
 ```
 
@@ -70,31 +70,30 @@ The token header will always be:
 
 ```json
 {
-    "alg": "EdDSA",
-    "typ": "JWT"
+  "alg": "EdDSA",
+  "typ": "JWT"
 }
 ```
-
 
 Here's what creating a token might look like. For a real example, see [./src/auth.ts](./src/auth.ts).
 
 ```js
 const header = {
-    alg: 'EdDSA',
-    typ: 'JWT'
+  alg: 'EdDSA',
+  typ: 'JWT',
 }
 
 const payload = {
-  iss: "did:key:z6Mkh74NGBSqQGqeKa2wVuJyRJ1ZJwPngHPg9V6DY2qnVnA5",
-    req: {
-      put: {
-          rootCID: "bafkreifeqjorwymdmh77ars6tbrtno74gntsdcvqvcycucidebiri2e7qy",
-          tags: { 
-            chain: "solana",
-            "solana-cluster": "devnet" 
-          },
-       },
-    },   
+  iss: 'did:key:z6Mkh74NGBSqQGqeKa2wVuJyRJ1ZJwPngHPg9V6DY2qnVnA5',
+  req: {
+    put: {
+      rootCID: 'bafkreifeqjorwymdmh77ars6tbrtno74gntsdcvqvcycucidebiri2e7qy',
+      tags: {
+        chain: 'solana',
+        'solana-cluster': 'devnet',
+      },
+    },
+  },
 }
 
 // assume base64urlencode is defined elsewhere
