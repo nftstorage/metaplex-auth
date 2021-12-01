@@ -28,6 +28,7 @@
     "build:cli": "mkdirp ./dist && esbuild ./src/cli.ts --bundle --format=cjs --platform=node --inject:./src/platform.node.js --target=es2018 --outfile=./dist/cli.js",
     "prepublishOnly": "npm run test && npm run build",
     "test": "node test/utils/test.mjs mocha",
+    "typedoc": "typedoc",
     "prepare": "husky install"
   },
   "lint-staged": {
@@ -72,6 +73,8 @@
     "prettier": "2.4.1",
     "rimraf": "^3.0.2",
     "ts-node": "^10.4.0",
+    "typedoc": "^0.22.10",
+    "typedoc-plugin-missing-exports": "^0.22.6",
     "typescript": "^4.4.4"
   }
 }

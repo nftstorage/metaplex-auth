@@ -1,0 +1,23 @@
+name: Typedoc
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  typedoc:
+    name: Generate TypeDocs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 16
+      - uses: bahmutov/npm-install@v1
+      - name: Typedoc
+        run: npm run typedoc
+      - name: Publish to GH Pages
+        uses: JamesIves/github-pages-deploy-action@4.1.4
+        with:
+          branch: gh-pages
+          folder: generated-docs
