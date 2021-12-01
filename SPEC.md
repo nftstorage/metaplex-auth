@@ -1,7 +1,8 @@
 # Metaplex / NFT.Storage auth specification
 
 Author: Yusef Napora <yusef@protocol.ai>
-Last revision: 2021-11-17
+
+Last revision: 2021-12-01
 
 This document describes the public-key based authentication scheme used to make [NFT.Storage](https://nft.storage) accessible to all Metaplex users free of charge.
 
@@ -58,7 +59,7 @@ There is currently only one supported request type, `put`, which uploads a CAR f
 A `put` request description must contain a `rootCID` field whose value is the root CID of a Content Archive included in the request body.
 The CID should be encoded as a CIDv1 string.
 
-The `put` object also contains a `tags` key/value map that may contain arbitrary metadata tags. Currently this is used to identify the target blockchain (always `solana`) and the cluster that the user intends to mint on (e.g. `devnet` or `mainnet-beta`). Users may include arbitrary tags here, with the caveat that they are not currently publicly exposed anywhere and may be of limited utility. That said, any tags included here will be recorded for bookeeping purposes and may be made public at a later date, so don't put anything sensitive in there.
+The `put` object also contains a `tags` key/value map that may contain arbitrary metadata tags. Currently this is used to identify the target blockchain (always `solana`) and the cluster that the user intends to mint on (e.g. `devnet` or `mainnet-beta`). Unrecognized tags will be discarded by the backend, and tags should not be used to store arbitrary metadata. Future revisions to this spec may introduce additional tags.
 
 ### Signing the token
 
