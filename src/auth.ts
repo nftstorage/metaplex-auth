@@ -80,7 +80,7 @@ export async function makeMetaplexUploadToken(auth: AuthContext, rootCID: string
   return token
 }
 
-function keyDID(pubkey: Uint8Array): string {
+export function keyDID(pubkey: Uint8Array): string {
   const keyWithCodec = new Uint8Array([...MulticodecEd25519Pubkey, ...pubkey])
   const mb = base58btc.encode(keyWithCodec)
   return `did:key:${mb}`
