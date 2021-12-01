@@ -19,33 +19,23 @@ yarn add @nftstorage/metaplex-auth
 ## Usage
 
 ```js
-import { MetaplexAuthWithSecretKey, NFTStorageUploader } from '@nftstorage/metaplex-auth'
+import { NFTStorageMetaplexor } from 'metaplex-dotstorage-auth'
 import { getFilesFromPath } from 'files-from-path'
 
 async function upload(filenames) {
   const key = await loadKeyFromSomewhere()
-  const auth = MetaplexAuthWithSecretKey(key, 'mainnet-beta') // or 'devnet'
-  const uploader = NFTStorageUploader(auth)
-
+  const client = NFTStorageMetaplexor.withSecretKey(key, 'mainnet-beta') // or 'devnet'
   const files = await getFilesFromPath(filenames)
 
   console.log(`uploading ${files.length} files...`)
-  const result = await uploader.uploadFiles(files, {
-    onStoredChunk: (size) => console.log(`uploaded chunk of ${size} bytes`)
-  })
+  const cid = await client.storeDirectory(files)
 
-  console.log(result)
-  // {
-  //   "rootCID": "bafy123...",
-  //   "filenames": [
-  //     "file1.json"
-  //     "file2.png"
-  //   ]
-  // }
+  console.log(cid)
+  // => "bafy123..."
 }
 ```
 
-The `MetaplexAuthWithSecretKey` function returns an `AuthContext` that will authorize requests to NFT.Storage made with an `NFTStorageUploader`.
+The `NFTStorageMetaplexor.withSecretKey` function returns an `NFTStorageMetaplexor` client object that will use the given secret key to authorize uploads to NFT.Storage
 
-If you're using a [wallet adapter](https://github.com/solana-labs/wallet-adapter), you can use `MetaplexAuthWithSigner` instead.
+If you're using a [wallet adapter](https://github.com/solana-labs/wallet-adapter), you can use `NFTStorageMetaplexor.withSigner` instead.
 
