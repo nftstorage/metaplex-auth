@@ -37,6 +37,9 @@ export interface StoreNFTResult {
 
   /** ipfs:// URI for metadata json file */
   metadataURI: string
+
+  /** The metadata that was stored with NFT.Storage, as a JS object */
+  metadata: Record<string, any>
 }
 
 /**
@@ -191,6 +194,7 @@ export class NFTStorageMetaplexor {
       assetRootCID,
       metadataGatewayURL,
       metadataURI,
+      metadata: nft.metadata,
     }
   }
 
