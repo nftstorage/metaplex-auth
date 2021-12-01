@@ -19,7 +19,7 @@ yarn add @nftstorage/metaplex-auth
 ## Usage
 
 ```js
-import { NFTStorageMetaplexor } from 'metaplex-dotstorage-auth'
+import { NFTStorageMetaplexor } from '@nftstorage/metaplex-auth'
 import { getFilesFromPath } from 'files-from-path'
 
 async function upload(filenames) {

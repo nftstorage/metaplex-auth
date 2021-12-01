@@ -1,6 +1,11 @@
 import fs from 'fs/promises'
 import { parse } from 'ts-command-line-args'
-import { AuthContext, MetaplexAuthWithSecretKey, SolanaCluster, makeMetaplexUploadToken } from './auth'
+import {
+  AuthContext,
+  MetaplexAuthWithSecretKey,
+  SolanaCluster,
+  makeMetaplexUploadToken,
+} from './auth'
 import { NFTStorageMetaplexor } from './upload'
 import { getFilesFromPath } from 'files-from-path'
 
@@ -16,11 +21,25 @@ const CLUSTER_VALUES = ['mainnet-beta', 'devnet']
 const DEFAULT_CLUSTER = 'devnet'
 
 const args = parse<IArgs>({
-  keyfile: { type: String, description: "path to solana key file", alias: 'k' },
-  cluster: { type: String, description: `name of solana cluster. valid choices: ${CLUSTER_VALUES.join(', ')}.`, defaultValue: DEFAULT_CLUSTER },
-  endpoint: { type: String, description: 'api endpoint for nft.storage', defaultValue: 'https://api.nft.storage' },
-  testCID: { type: String, optional: true, description: `CID to create a test token for. If present, upload will be skipped and token will be printed to the console.` },
-  files: { type: String, optional: true, multiple: true, defaultOption: true }
+  keyfile: { type: String, description: 'path to solana key file', alias: 'k' },
+  cluster: {
+    type: String,
+    description: `name of solana cluster. valid choices: ${CLUSTER_VALUES.join(
+      ', '
+    )}.`,
+    defaultValue: DEFAULT_CLUSTER,
+  },
+  endpoint: {
+    type: String,
+    description: 'api endpoint for nft.storage',
+    defaultValue: 'https://api.nft.storage',
+  },
+  testCID: {
+    type: String,
+    optional: true,
+    description: `CID to create a test token for. If present, upload will be skipped and token will be printed to the console.`,
+  },
+  files: { type: String, optional: true, multiple: true, defaultOption: true },
 })
 
 if (!CLUSTER_VALUES.includes(args.cluster)) {
@@ -29,24 +48,30 @@ if (!CLUSTER_VALUES.includes(args.cluster)) {
 }
 
 async function main() {
-  const auth = await makeAuthContext(args.keyfile, args.cluster as SolanaCluster)
+  const auth = await makeAuthContext(
+    args.keyfile,
+    args.cluster as SolanaCluster
+  )
 
   if (args.testCID) {
     const token = await makeMetaplexUploadToken(auth, args.testCID)
-    console.log("token: ", token)
+    console.log('token: ', token)
     return
   }
 
   if (!args.files) {
-    console.error("must provide file path argument when --testCID is not set")
+    console.error('must provide file path argument when --testCID is not set')
     process.exit(1)
   }
 
   const files = await getFilesFromPath(args.files)
 
-  const client = new NFTStorageMetaplexor({auth, endpoint: new URL(args.endpoint) })
+  const client = new NFTStorageMetaplexor({
+    auth,
+    endpoint: new URL(args.endpoint),
+  })
   console.log(`uploading ${files.length} file${files.length > 1 ? 's' : ''}...`)
-  
+
   // @ts-ignore - todo: figure out correct type to use for File param
   const rootCID = await client.storeDirectory(files)
 
@@ -54,9 +79,13 @@ async function main() {
   console.log(`Root CID: ${rootCID}`)
 
   // strip leading / chars from filename
-  const filenames = files.map(f => f.name.replace(new RegExp('^\\/'), ''))
-  const ipfsURIs = filenames.map(f => `ipfs://${rootCID}/${encodeURIComponent(f)}`)
-  const gatewayURLs = filenames.map(f => `https://${rootCID}.ipfs.dweb.link/${f}`)
+  const filenames = files.map((f) => f.name.replace(new RegExp('^\\/'), ''))
+  const ipfsURIs = filenames.map(
+    (f) => `ipfs://${rootCID}/${encodeURIComponent(f)}`
+  )
+  const gatewayURLs = filenames.map(
+    (f) => `https://${rootCID}.ipfs.dweb.link/${f}`
+  )
 
   console.log('-------- IPFS URIs: --------')
   console.log(ipfsURIs.join('\n'))
@@ -64,21 +93,23 @@ async function main() {
   console.log(gatewayURLs.join('\n'))
 }
 
-
 async function loadKey(keyfilePath: string): Promise<Uint8Array> {
   const content = await fs.readFile(keyfilePath, { encoding: 'utf-8' })
   const keyArray = JSON.parse(content)
   return new Uint8Array(keyArray)
 }
 
-async function makeAuthContext(keyfilePath: string, cluster: SolanaCluster): Promise<AuthContext> {
+async function makeAuthContext(
+  keyfilePath: string,
+  cluster: SolanaCluster
+): Promise<AuthContext> {
   const secretKey = await loadKey(keyfilePath)
   return MetaplexAuthWithSecretKey(secretKey, cluster)
 }
 
 main()
   .then(() => process.exit(0))
-  .catch(e => {
+  .catch((e) => {
     console.error(e)
     process.exit(1)
   })
