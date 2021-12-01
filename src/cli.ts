@@ -1,7 +1,7 @@
 import fs from 'fs/promises'
 import { parse } from 'ts-command-line-args'
-import { AuthContext, MetaplexAuthWithSecretKey, SolanaCluster, getUploadCredentials } from './auth'
-import { NFTStorageUploader } from './upload'
+import { AuthContext, MetaplexAuthWithSecretKey, SolanaCluster, makeMetaplexUploadToken } from './auth'
+import { NFTStorageMetaplexor } from './upload'
 import { getFilesFromPath } from 'files-from-path'
 
 interface IArgs {
@@ -32,10 +32,8 @@ async function main() {
   const auth = await makeAuthContext(args.keyfile, args.cluster as SolanaCluster)
 
   if (args.testCID) {
-    const creds = await getUploadCredentials(auth, args.testCID)
-    console.log("token: ", creds.token)
-    console.log("meta: ")
-    console.dir(creds.meta, { depth: 100 })
+    const token = await makeMetaplexUploadToken(auth, args.testCID)
+    console.log("token: ", token)
     return
   }
 
@@ -46,22 +44,24 @@ async function main() {
 
   const files = await getFilesFromPath(args.files)
 
-  const uploader = new NFTStorageUploader(auth, args.endpoint)
+  const client = new NFTStorageMetaplexor({auth, endpoint: new URL(args.endpoint) })
   console.log(`uploading ${files.length} file${files.length > 1 ? 's' : ''}...`)
   
   // @ts-ignore - todo: figure out correct type to use for File param
-  const result = await uploader.uploadFiles(files, {
-    onStoredChunk: (size) => {
-      console.log(`stored chunk of ${size} bytes`)
-    }
-  })
+  const rootCID = await client.storeDirectory(files)
 
   console.log('Upload complete!')
-  console.log(`Root CID: ${result.rootCID}`)
+  console.log(`Root CID: ${rootCID}`)
+
+  // strip leading / chars from filename
+  const filenames = files.map(f => f.name.replace(new RegExp('^\\/'), ''))
+  const ipfsURIs = filenames.map(f => `ipfs://${rootCID}/${encodeURIComponent(f)}`)
+  const gatewayURLs = filenames.map(f => `https://${rootCID}.ipfs.dweb.link/${f}`)
+
   console.log('-------- IPFS URIs: --------')
-  console.log(result.ipfsURIs().join('\n'))
+  console.log(ipfsURIs.join('\n'))
   console.log('-------- HTTP Gateway URLs: --------')
-  console.log(result.gatewayURLs().map(u => u.toString()).join('\n'))
+  console.log(gatewayURLs.join('\n'))
 }
 
 

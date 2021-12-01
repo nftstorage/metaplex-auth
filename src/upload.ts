@@ -1,157 +1,51 @@
-import { transform } from "streaming-iterables"
-import { CarReader } from "@ipld/car/lib/reader-browser";
-import { CID } from "multiformats";
-import { TreewalkCarSplitter } from "carbites";
+import { AuthContext, makeMetaplexUploadToken } from './auth'
+import { NFTStorage } from 'nft.storage'
 
-import { packFiles } from "./car";
-import { AuthContext, getUploadCredentials } from "./auth";
-import type { UploadCredentials } from './auth';
+const DEFAULT_ENDPOINT = new URL('https://api.nft.storage')
 
-const MAX_PUT_RETRIES = 1
-const MAX_CONCURRENT_UPLOADS = 3
-const MAX_CHUNK_SIZE = 1024 * 1024 * 10 // chunk to ~10MB CARs
-const DEFAULT_GATEWAY_HOST = "https://dweb.link"
-
-function metaplexAuthHeaders(creds: UploadCredentials) {
-  return {
-   'x-web3auth': `Metaplex ${creds.token}`,
-   'x-web3meta': JSON.stringify(creds.meta),
-  }
-}
-
-interface PutOptions {
-  maxRetries?: number,
-  onStoredChunk?: (size: number) => void,
-}
-
-type IPFSUri = string
 type CIDString = string
 
-interface UploadFilesResult {
-  rootCID: string,
-  filenames: string[],
-
-  ipfsURIs(): IPFSUri[],
-  gatewayURLs(host?: string): URL[],
-}
-
-/**
- * Base Uploader class for adding data to a *.storage backend using a metaplex {@link AuthContext}.
- * 
- * This class implements the common functionality of packing File data into CARs, requesting an
- * upload token from the auth service using the AuthContext, splitting the CAR into
- * chunks, and sending each chunk to the backend API. The derived classes must implement the
- * {@link putCarFile} method, which takes a Blob containing a single chunked CAR and uploads it
- * to the backend.
- *
- */
-abstract class Uploader {
+export class NFTStorageMetaplexor {
+  static #initialized: boolean
   auth: AuthContext
+  endpoint: URL
 
-  constructor(auth: AuthContext) {
-    this.auth = auth
-  }
-
-  /**
-   * Uploads a Blob containing data of type `application/car` to this Uploader's API.
-   * 
-   * Must be defined in derived classes. See {@link NFTStorageUploader.putCarFile}.
-   * 
-   * @param carFile - a Blob containing CAR data, with content type set to `application/car`.
-   * @param carRoot - the root CID of the CAR file, as a string.
-   * @param uploadCreds - a one-time-use upload token, specific to this root CID, plus associated metadata.
-   */
-  abstract putCarFile(carFile: Blob, carRoot: string, uploadCreds: UploadCredentials): Promise<string>
-
-  /**
-   * Uploads one or more {@link File}s to uploader's backend API.
-   * The uploaded files will be wrapped in an IPFS directory.
-   * 
-   * @param files 
-   * @param opts 
-   * @returns - an object containing the root CID of the upload, as well as the filenames and accessor methods for creating IPFS uris or gateway URLs for each file.
-   */
-  async uploadFiles(files: File[], opts: PutOptions = {}): Promise<UploadFilesResult> {
-    const { car, root } = await packFiles(...files)
-    const rootCID = await this.uploadCar(car, root, opts)
-
-    // trim leading slashes from filenames
-    const filenames = files.map(f => f.name.replace(new RegExp('^\\/'), ''))
-    
-    const ipfsURIs = () => filenames.map(n => `ipfs://${rootCID}/${encodeURIComponent(n)}`)
-    const gatewayURLs = (host: string = DEFAULT_GATEWAY_HOST) => 
-      filenames.map(n => new URL(`/ipfs/${rootCID}/${encodeURIComponent(n)}`, host))
-    
-
-    return {
-      rootCID,
-      filenames,
-      ipfsURIs,
-      gatewayURLs,
+  // Overrides the default NFTStorage.auth function to set
+  // an 'x-web3auth' header instead of 'Authorization'.
+  // Must be called before calling NFTStorage.storeCar
+  static #init() {
+    if (this.#initialized) {
+      return
     }
-  }
-
-  async uploadCar(car: CarReader, root: CID, opts: PutOptions = {}): Promise<CIDString> {
-    const { default: pRetry } = await import('p-retry')
-
-    const maxRetries = opts.maxRetries ?? MAX_PUT_RETRIES
-    const { onStoredChunk } = opts
-
-    const carRoot = root.toString()
-    const creds = await getUploadCredentials(this.auth, carRoot)
-  
-    const chunkUploader = async (carChunk: AsyncIterable<Uint8Array>) => {
-      const carParts = []
-      for await (const part of carChunk) {
-        carParts.push(part)
-      }
-    
-      const carFile = new Blob(carParts, { type: 'application/car' })
-      const res = await pRetry(
-        () => this.putCarFile(carFile, carRoot, creds),
-        { retries: maxRetries }
-      )
-      // const res = await this.putCarFile(carFile, carRoot, uploadToken)
-      
-      onStoredChunk && onStoredChunk(carFile.size)
-      return res
-    }
-
-    const upload = transform(MAX_CONCURRENT_UPLOADS, chunkUploader)
-    const splitter = new TreewalkCarSplitter(car, MAX_CHUNK_SIZE)
-    
-    for await (const _ of upload(splitter.cars())) {}
-    return root.toString()
-  }
-}
-
-
-
-export class NFTStorageUploader extends Uploader {
-  endpoint: string
-
-  constructor(auth: AuthContext, endpoint: string = "https://api.nft.storage") {
-    super(auth)
-    this.endpoint = endpoint
-  }
-
-  async putCarFile (carFile: Blob, carRoot: string, uploadCreds: UploadCredentials): Promise<string> {
-    const putCarEndpoint = new URL("/metaplex/upload", this.endpoint)
-
-    const headers = metaplexAuthHeaders(uploadCreds)
-    const request = await fetch(putCarEndpoint.toString(), {
-      method: 'POST',
-      headers,
-      body: carFile,
+    // @ts-ignore
+    NFTStorage.auth = (token: string) => ({
+      'x-web3auth': `Metaplex ${token}`
     })
-    const res = await request.json() as { error?: { message: string }, value?: { cid: string } }
-    if (!request.ok) {
-      throw new Error(res.error?.message ?? 'unknown error')
-    }
+    this.#initialized = true
+  }
 
-    if (res.value?.cid !== carRoot) {
-      throw new Error(`root CID mismatch, expected: ${carRoot}, received: ${res.value?.cid}`)
-    }
-    return carRoot
+  constructor({ auth, endpoint}: {auth: AuthContext, endpoint?: URL}) {
+    this.auth = auth
+    this.endpoint = endpoint || DEFAULT_ENDPOINT
+  }
+
+  static async storeDirectory(opts: { auth: AuthContext, endpoint?: URL }, files: Iterable<File>): Promise<CIDString> {
+    this.#init()
+    const { auth } = opts
+    const baseEndpoint = opts.endpoint || DEFAULT_ENDPOINT
+
+    // NFTStorage.storeCar adds `/upload` to the base endpoint url.
+    // We want our request to go to `/metaplex/upload`, so we add the
+    // `/metaplex/` prefix here.
+    const endpoint = new URL('/metaplex/', baseEndpoint)
+
+    const { car, cid } = await NFTStorage.encodeDirectory(files)
+    const token = await makeMetaplexUploadToken(auth, cid.toString())
+    return NFTStorage.storeCar({ endpoint, token }, car)
+  }
+
+  async storeDirectory(files: Iterable<File>): Promise<CIDString> {
+    const { auth, endpoint } = this
+    return NFTStorageMetaplexor.storeDirectory({ auth, endpoint }, files)
   }
 }
