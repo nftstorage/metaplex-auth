@@ -27,7 +27,7 @@
     "build:browser": "mkdirp ./dist && esbuild ./src/index.ts --bundle --format=esm --target=es2018 --outfile=./dist/index.browser.js",
     "build:cli": "mkdirp ./dist && esbuild ./src/cli.ts --bundle --format=cjs --platform=node --inject:./src/platform.node.js --target=es2018 --outfile=./dist/cli.js",
     "prepublishOnly": "npm run test && npm run build",
-    "test": "mocha",
+    "test": "node test/utils/test.mjs mocha",
     "prepare": "husky install"
   },
   "lint-staged": {
@@ -58,6 +58,8 @@
     "varint": "^6.0.0"
   },
   "devDependencies": {
+    "@ipld/car": "^3.2.0",
+    "@ssttevee/multipart-parser": "^0.1.9",
     "@types/chai": "^4.2.22",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.11.8",

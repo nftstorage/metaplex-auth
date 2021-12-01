@@ -198,4 +198,15 @@ export class NFTStorageMetaplexor {
   async storePreparedNFT(nft: PackagedNFT): Promise<StoreNFTResult> {
     return NFTStorageMetaplexor.storePreparedNFT(this, nft)
   }
+
+  async storeNFTFromFilesystem(
+    metadataFilePath: string,
+    imageFilePath?: string
+  ): Promise<StoreNFTResult> {
+    return NFTStorageMetaplexor.storeNFTFromFilesystem(
+      this,
+      metadataFilePath,
+      imageFilePath
+    )
+  }
 }
