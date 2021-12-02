@@ -51,7 +51,7 @@ export interface StoreNFTResult {
  *
  */
 export class NFTStorageMetaplexor {
-  static #initialized: boolean
+  private static _initialized: boolean
   auth: AuthContext
   endpoint: URL
 
@@ -59,14 +59,14 @@ export class NFTStorageMetaplexor {
   // an 'x-web3auth' header instead of 'Authorization'.
   // Must be called before calling NFTStorage.storeCar
   static #init() {
-    if (this.#initialized) {
+    if (this._initialized) {
       return
     }
     // @ts-ignore
     NFTStorage.auth = (token: string) => ({
       'x-web3auth': `Metaplex ${token}`,
     })
-    this.#initialized = true
+    this._initialized = true
   }
 
   constructor({ auth, endpoint }: ServiceContext) {
