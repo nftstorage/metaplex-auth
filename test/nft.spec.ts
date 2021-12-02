@@ -16,7 +16,6 @@ describe('loadNFTFromFilesystem', () => {
     const expectedURI =
       'ipfs://bafybeiegbfxiiz26tqzrcl4xyhf42vxrseeouubiwhmmlgrb4t2rbdiruu/metadata.json'
     expect(nft.metadataURI).to.equal(expectedURI)
-    console.log(nft.metadata)
   })
 
   it('finds image file if json "image" field contains valid file path', async () => {

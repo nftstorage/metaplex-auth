@@ -58,7 +58,7 @@ export class NFTStorageMetaplexor {
   // Overrides the default NFTStorage.auth function to set
   // an 'x-web3auth' header instead of 'Authorization'.
   // Must be called before calling NFTStorage.storeCar
-  static #init() {
+  private static init() {
     if (this._initialized) {
       return
     }
@@ -131,7 +131,7 @@ export class NFTStorageMetaplexor {
     context: ServiceContext,
     files: Iterable<File>
   ): Promise<CIDString> {
-    this.#init()
+    this.init()
     const { cid, car } = await NFTStorage.encodeDirectory(files)
     return this.storeCar(context, cid, car)
   }
@@ -145,7 +145,7 @@ export class NFTStorageMetaplexor {
    * @returns a Promise that resolves to the uploaded CID, as a CIDv1 string.
    */
   static async storeCar(context: ServiceContext, cid: CID, car: CarReader) {
-    this.#init()
+    this.init()
     const { auth } = context
     const baseEndpoint = context.endpoint || DEFAULT_ENDPOINT
 
@@ -175,7 +175,7 @@ export class NFTStorageMetaplexor {
     context: ServiceContext,
     nft: PackagedNFT
   ): Promise<StoreNFTResult> {
-    this.#init()
+    this.init()
 
     const metadataRootCID = await this.storeCar(
       context,
