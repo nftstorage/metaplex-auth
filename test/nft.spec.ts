@@ -13,9 +13,12 @@ describe('loadNFTFromFilesystem', () => {
       'token.json'
     )
     const nft = await loadNFTFromFilesystem(jsonPath)
-    const expectedURI =
-      'ipfs://bafybeiegbfxiiz26tqzrcl4xyhf42vxrseeouubiwhmmlgrb4t2rbdiruu/metadata.json'
-    expect(nft.metadataURI).to.equal(expectedURI)
+    expect(nft.metadataURI).to.contain('ipfs://')
+    expect(nft.metadataURI).to.contain(nft.rootCID.toString())
+    expect(nft.metadataURI).to.contain('metadata.json')
+    expect(nft.metadata.image).to.contain('https://')
+    expect(nft.metadata.image).to.contain(nft.assetRootCID.toString())
+    expect(nft.metadata.image).to.contain('token.png')
   })
 
   it('finds image file if json "image" field contains valid file path', async () => {
@@ -27,9 +30,12 @@ describe('loadNFTFromFilesystem', () => {
       'image-path-in-image-field.json'
     )
     const nft = await loadNFTFromFilesystem(jsonPath)
-    const expectedURI =
-      'ipfs://bafybeiegbfxiiz26tqzrcl4xyhf42vxrseeouubiwhmmlgrb4t2rbdiruu/metadata.json'
-    expect(nft.metadataURI).to.equal(expectedURI)
+    expect(nft.metadataURI).to.contain('ipfs://')
+    expect(nft.metadataURI).to.contain(nft.rootCID.toString())
+    expect(nft.metadataURI).to.contain('metadata.json')
+    expect(nft.metadata.image).to.contain('https://')
+    expect(nft.metadata.image).to.contain(nft.assetRootCID.toString())
+    expect(nft.metadata.image).to.contain('token.png')
   })
 
   it('works with a manually specified imageFilePath', async () => {
@@ -48,8 +54,11 @@ describe('loadNFTFromFilesystem', () => {
       'token.png'
     )
     const nft = await loadNFTFromFilesystem(jsonPath, imagePath)
-    const expectedURI =
-      'ipfs://bafybeiegbfxiiz26tqzrcl4xyhf42vxrseeouubiwhmmlgrb4t2rbdiruu/metadata.json'
-    expect(nft.metadataURI).to.equal(expectedURI)
+    expect(nft.metadataURI).to.contain('ipfs://')
+    expect(nft.metadataURI).to.contain(nft.rootCID.toString())
+    expect(nft.metadataURI).to.contain('metadata.json')
+    expect(nft.metadata.image).to.contain('https://')
+    expect(nft.metadata.image).to.contain(nft.assetRootCID.toString())
+    expect(nft.metadata.image).to.contain('token.png')
   })
 })

@@ -50,6 +50,7 @@
     "@web-std/file": "^1.1.4",
     "ajv": "^8.8.1",
     "files-from-path": "^0.2.1",
+    "ipfs-car": "^0.6.0",
     "multiformats": "^9.4.10",
     "nft.storage": "^4.0.0",
     "p-retry": "^5.0.0",

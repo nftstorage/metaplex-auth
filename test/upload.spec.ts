@@ -85,7 +85,7 @@ describe('NFTStorageMetaplexor', () => {
       )
       const result = await client.storeNFTFromFilesystem(metadataPath)
       expect(result.assetRootCID).to.not.be.empty
-      expect(result.metadataRootCID).to.not.be.empty
+      expect(result.rootCID).to.not.be.empty
       expect(result.metadata['image']).to.eq(
         `https://dweb.link/ipfs/${result.assetRootCID}/token.png`
       )

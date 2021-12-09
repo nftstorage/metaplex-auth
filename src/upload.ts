@@ -26,8 +26,8 @@ export type ServiceContext = { auth: AuthContext; endpoint?: URL }
  * {@link NFTStorageMetaplexor.storeNFTFromFilesystem}.
  */
 export interface StoreNFTResult {
-  /** CID of the IPFS directory containing the metadata.json file for the NFT */
-  metadataRootCID: CIDString
+  /** CID of the IPFS DAG containing the metadata json file and all NFT assets. */
+  rootCID: CIDString
 
   /** CID of the IPFS directory containing all assets bundled with the NFT (including main image) */
   assetRootCID: CIDString
@@ -177,21 +177,12 @@ export class NFTStorageMetaplexor {
   ): Promise<StoreNFTResult> {
     this.init()
 
-    const metadataRootCID = await this.storeCar(
-      context,
-      nft.encodedMetadata.cid,
-      nft.encodedMetadata.car
-    )
-    const assetRootCID = await this.storeCar(
-      context,
-      nft.encodedAssets.cid,
-      nft.encodedAssets.car
-    )
+    const rootCID = await this.storeCar(context, nft.rootCID, nft.car)
     const { metadataGatewayURL, metadataURI } = nft
 
     return {
-      metadataRootCID,
-      assetRootCID,
+      rootCID,
+      assetRootCID: nft.assetRootCID.toString(),
       metadataGatewayURL,
       metadataURI,
       metadata: nft.metadata,
