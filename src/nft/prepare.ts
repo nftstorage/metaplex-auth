@@ -27,9 +27,9 @@ export interface PackagedNFT {
  * Encodes the given NFT metadata and asset files into CARs that can be uploaded to
  * NFT.Storage.
  *
- * First, the `imageFile` and any `additionalAssetFiles` are packed into a CAR,
- * and the root CID of this "asset CAR" is used to create IPFS URIs and gateway
- * URLs for each file in the NFT bundle.
+ * First, the `imageFile` and any `additionalAssetFiles` are packed into an IPFS
+ * directory object, and the root CID of the directory is used to create IPFS uris
+ * and gateway links to the assets.
  *
  * The input metadata is then modified:
  *
@@ -43,12 +43,13 @@ export interface PackagedNFT {
  *   with `cdn == false`, and the other will have an HTTP gateway URL, with
  *   `cdn == true`.
  *
- * This updated metadata is then serialized and packed into a second car.
- * Both CARs are returned in a {@link PackagedNFT} object, which also contains
- * the updated metadata object and links to the metadata.
+ * This updated metadata is then serialized to a JSON file, and additionally
+ * encoded into a [dag-cbor](https://github.com/ipld/ipld/blob/master/specs/codecs/dag-cbor/spec.md)
+ * block which links to the metadata JSON.
+ * The metadata and assets, plus the dag-cbor root block are encoded into a CAR for upload.
  *
  * Note that this function does NOT store anything with NFT.Storage. The links
- * in the returned {@link PackagedNFT} will not resolve until the CARs have been
+ * in the returned {@link PackagedNFT} will not resolve until the CAR has been
  * uploaded. Use {@link NFTStorageMetaplexor.storePreparedNFT} to upload.
  *
  * @param metadata a JS object containing (hopefully) valid Metaplex NFT metadata
