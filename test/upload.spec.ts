@@ -24,7 +24,9 @@ describe('NFTStorageMetaplexor', () => {
 
   describe('withSecretKey', () => {
     it('creates an instance with an AuthContext backed by the given key', async () => {
-      const client = NFTStorageMetaplexor.withSecretKey(secretKey)
+      const client = NFTStorageMetaplexor.withSecretKey(secretKey, {
+        mintingAgent: 'unit-tests',
+      })
       expect(client.auth.publicKey).to.deep.eq(publicKey)
 
       const { msg, sig } = await signRandomMessage(client.auth)
@@ -38,7 +40,9 @@ describe('NFTStorageMetaplexor', () => {
       const signMessage = async (msg: Uint8Array) =>
         nacl.sign.detached(msg, secretKey)
 
-      const client = NFTStorageMetaplexor.withSigner(signMessage, publicKey)
+      const client = NFTStorageMetaplexor.withSigner(signMessage, publicKey, {
+        mintingAgent: 'unit-tests',
+      })
       expect(client.auth.publicKey).to.deep.eq(publicKey)
 
       const { msg, sig } = await signRandomMessage(client.auth)
@@ -49,7 +53,10 @@ describe('NFTStorageMetaplexor', () => {
 
   describe('storeDirectory', () => {
     it('posts a CAR to /metaplex/upload', async () => {
-      const client = NFTStorageMetaplexor.withSecretKey(secretKey, { endpoint })
+      const client = NFTStorageMetaplexor.withSecretKey(secretKey, {
+        endpoint,
+        mintingAgent: 'unit-tests',
+      })
       const dir = path.join(__dirname, 'fixtures', 'nfts', '01-simple-example')
       const files = await getFilesFromPath(dir)
       // @ts-ignore getFilesFromPath returns a different File object type. TODO: fix type def on storeDirectory to be more permissive
@@ -60,7 +67,10 @@ describe('NFTStorageMetaplexor', () => {
 
   describe('storeCar', () => {
     it('posts a CAR to /metaplex/upload', async () => {
-      const client = NFTStorageMetaplexor.withSecretKey(secretKey, { endpoint })
+      const client = NFTStorageMetaplexor.withSecretKey(secretKey, {
+        endpoint,
+        mintingAgent: 'unit-tests',
+      })
       const dir = path.join(__dirname, 'fixtures', 'cars')
       const filenames = await fs.readdir(dir)
       for (const f of filenames) {
@@ -75,7 +85,10 @@ describe('NFTStorageMetaplexor', () => {
 
   describe('storeNFTFromFilesystem', () => {
     it('loads an NFT from disk and posts two CARs to /metaplex/upload', async () => {
-      const client = NFTStorageMetaplexor.withSecretKey(secretKey, { endpoint })
+      const client = NFTStorageMetaplexor.withSecretKey(secretKey, {
+        endpoint,
+        mintingAgent: 'unit-tests',
+      })
       const metadataPath = path.join(
         __dirname,
         'fixtures',

@@ -8,6 +8,7 @@ import {
 } from './auth'
 import { NFTStorageMetaplexor } from './upload'
 import { getFilesFromPath } from 'files-from-path'
+import { version as projectVersion } from '../package.json'
 
 interface IArgs {
   keyfile: string
@@ -17,6 +18,7 @@ interface IArgs {
   files?: string[]
 }
 
+const MINTING_AGENT = 'metaplex-auth/cli'
 const CLUSTER_VALUES = ['mainnet-beta', 'devnet']
 const DEFAULT_CLUSTER = 'devnet'
 
@@ -101,10 +103,14 @@ async function loadKey(keyfilePath: string): Promise<Uint8Array> {
 
 async function makeAuthContext(
   keyfilePath: string,
-  cluster: SolanaCluster
+  solanaCluster: SolanaCluster
 ): Promise<AuthContext> {
   const secretKey = await loadKey(keyfilePath)
-  return MetaplexAuthWithSecretKey(secretKey, cluster)
+  return MetaplexAuthWithSecretKey(secretKey, {
+    mintingAgent: MINTING_AGENT,
+    agentVersion: projectVersion,
+    solanaCluster,
+  })
 }
 
 main()

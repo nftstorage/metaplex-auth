@@ -2,8 +2,50 @@ import { base58btc } from 'multiformats/bases/base58'
 import * as varint from 'varint'
 import nacl from 'tweetnacl'
 
-const TagChain = 'chain'
-const TagSolanaCluster = 'solana-cluster'
+/**
+ * Request tag indicating what blockchain will be used to mint. Currently, the value
+ * will always be set to `"solana"` and cannot be overridden by the user.
+ */
+export const TagChain = 'chain'
+
+/**
+ * Request tag indicating which [Solana cluster](https://docs.solana.com/clusters) will be
+ * used to mint.
+ *
+ * Currently this library will accept any string value, however it is strongly
+ * recommended that you use one of these "canonical" values: `"devnet"`, `"mainnet-beta"`, `"testnet"`.
+ * This may be enforced by the backend at a later date.
+ */
+export const TagSolanaCluster = 'solanaCluster'
+
+/**
+ * Request tag indicating which "user agent" or tool is being used to prepare the upload. This should be
+ * set to a string that includes the name of the tool or platform.
+ *
+ * Projects using this library are free to choose their own value for this tag, however you should avoid
+ * changing the name over time, unless the project itself changes names (for example, due to a community fork or re-branding).
+ *
+ * For personal projects or individuals creating tools that are not affiliated with a public platform, please set the
+ * value to a URL for your code repository. If your code is not yet public, please create a repository containing a
+ * description of the project and links to its public-facing interface.
+ *
+ * Examples of suitable values:
+ *
+ * - `"metaplex/candy-machine-cli"`
+ * - `"metaplex/js-sdk"`
+ * - `"magiceden/mint-authority"`
+ * - `"https://github.com/samuelvanderwaal/metaboss"`
+ *
+ */
+export const TagMintingAgent = 'mintingAgent'
+
+/**
+ * Optional request tag indicating which version of the "minting agent" was used to prepare the request.
+ * This may contain arbitrary text, as each project may have their own versioning scheme.
+ */
+export const TagMintingAgentVersion = 'agentVersion'
+
+const DEFAULT_CLUSTER = 'devnet'
 
 const MulticodecEd25519Pubkey = varint.encode(0xed)
 
@@ -14,14 +56,13 @@ export interface AuthContext {
 
   solanaCluster: SolanaCluster
 
+  mintingAgent: string
+
+  agentVersion?: string
+
   signMessage: Signer
 
   publicKey: Uint8Array
-}
-
-export interface UploadCredentials {
-  token: string
-  meta: Record<string, any>
 }
 
 export type Signer = (message: Uint8Array) => Promise<Uint8Array>
@@ -36,12 +77,25 @@ export interface RequestContext {
 export function MetaplexAuthWithSigner(
   signMessage: Signer,
   publicKey: Uint8Array,
-  solanaCluster: SolanaCluster = 'devnet'
+  opts: {
+    mintingAgent: string
+    agentVersion?: string
+    solanaCluster?: SolanaCluster
+  }
 ): AuthContext {
   const chain = 'solana'
+  const solanaCluster = opts.solanaCluster || DEFAULT_CLUSTER
+  const { mintingAgent, agentVersion } = opts
+
+  if (!mintingAgent) {
+    throw new Error('required option "mintingAgent" not provided')
+  }
+
   return {
     chain,
     solanaCluster,
+    mintingAgent,
+    agentVersion,
     signMessage,
     publicKey,
   }
@@ -49,14 +103,18 @@ export function MetaplexAuthWithSigner(
 
 export function MetaplexAuthWithSecretKey(
   privkey: Uint8Array,
-  solanaCluster: SolanaCluster = 'devnet'
+  opts: {
+    mintingAgent: string
+    agentVersion?: string
+    solanaCluster?: SolanaCluster
+  }
 ): AuthContext {
   const { publicKey, secretKey } = nacl.sign.keyPair.fromSecretKey(privkey)
   const signMessage = async (message: Uint8Array) => {
     return nacl.sign.detached(message, secretKey)
   }
 
-  return MetaplexAuthWithSigner(signMessage, publicKey, solanaCluster)
+  return MetaplexAuthWithSigner(signMessage, publicKey, opts)
 }
 
 export async function makeMetaplexUploadToken(
@@ -66,6 +124,8 @@ export async function makeMetaplexUploadToken(
   const tags = {
     [TagChain]: auth.chain,
     [TagSolanaCluster]: auth.solanaCluster,
+    [TagMintingAgent]: auth.mintingAgent,
+    [TagMintingAgentVersion]: auth.agentVersion,
   }
   const req = {
     put: {

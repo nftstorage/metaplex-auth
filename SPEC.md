@@ -2,7 +2,7 @@
 
 Author: Yusef Napora <yusef@protocol.ai>
 
-Last revision: 2021-12-01
+Last revision: 2021-12-10
 
 This document describes the public-key based authentication scheme used to make [NFT.Storage](https://nft.storage) accessible to all Metaplex users free of charge.
 
@@ -40,8 +40,10 @@ An example token payload looks like this:
     "put": {
       "rootCID": "bafkreifeqjorwymdmh77ars6tbrtno74gntsdcvqvcycucidebiri2e7qy",
       "tags": {
+        "mintingAgent": "my-awesome-tool",
+        "agentVersion": "0.1.0",
         "chain": "solana",
-        "solana-cluster": "devnet"
+        "solanaCluster": "devnet"
       }
     }
   }
@@ -59,7 +61,40 @@ There is currently only one supported request type, `put`, which uploads a CAR f
 A `put` request description must contain a `rootCID` field whose value is the root CID of a Content Archive included in the request body.
 The CID should be encoded as a CIDv1 string.
 
-The `put` object also contains a `tags` key/value map that may contain arbitrary metadata tags. Currently this is used to identify the target blockchain (always `solana`) and the cluster that the user intends to mint on (e.g. `devnet` or `mainnet-beta`). Unrecognized tags will be discarded by the backend, and tags should not be used to store arbitrary metadata. Future revisions to this spec may introduce additional tags.
+The `put` object also contains a `tags` key/value map that may contain arbitrary metadata tags. Currently accepted tags are listed below:
+
+##### `chain`
+
+Indicates the blockchain that will be used for minting. Currently the only valid value is `"solana"`.
+
+##### `solanaCluster`
+
+Indicates which [Solana cluster](https://docs.solana.com/clusters) will be used for minting. Must be provided when `chain == "solana"`. Acceptable values are: `"mainnet-beta"`, `"devnet"`, `"testnet"`.
+
+**Note:** an earlier draft of this spec & library used the key `solana-cluster` for this tag. This was changed to "camel case" for consistency and to play nice with JavaScript conventions.
+
+##### `mintingAgent`
+
+The `tags` map MUST include a `mintingAgent` tag, whose value should identify the tool or platform used to prepare the upload.
+
+Projects using this library are free to choose their own value for this tag, however you should avoid changing the name over time, unless the project itself changes names (for example, due to a community fork or re-branding).
+
+For personal projects or individuals creating tools that are not affiliated with a public platform, please set the value to a URL for your code repository. If your code is not yet public, please create a repository containing a description of the project and links to its public-facing interface.
+
+Examples of suitable values:
+
+- `"metaplex/candy-machine-cli"`
+- `"metaplex/js-sdk"`
+- `"magiceden/mint-authority"`
+- `"https://github.com/samuelvanderwaal/metaboss"`
+
+##### `agentVersion`
+
+The tags map may optionally include an `agentVersion` tag that identifies a specific version of the tool or platform, using whatever convention is used by the project (e.g. semver, etc.)
+
+##### Unrecognized tags
+
+Unrecognized tags will be discarded by the backend, and tags should not be used to store arbitrary metadata. Future revisions to this spec may introduce additional tags.
 
 ### Signing the token
 

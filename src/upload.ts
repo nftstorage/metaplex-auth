@@ -79,16 +79,27 @@ export class NFTStorageMetaplexor {
    *
    * @param key - an Ed25519 private key
    * @param opts
+   * @param opts.mintingAgent - the "user agent" or tool used to prepare the upload. See {@link TagMintingAgent} for details.
+   * @param opts.agentVersion - an optional version of the `mintingAgent`. See {@link TagMintingAgentVersion} for details.
    * @param opts.solanaCluster - the Solana cluster that the uploaded NFTs are to be minted on. defaults to 'devnet' if not provided.
    * @param opts.endpoint - the URL of the NFT.Storage API. defaults to 'https://api.nft.storage' if not provided.
    * @returns
    */
   static withSecretKey(
     key: Uint8Array,
-    opts: { solanaCluster?: SolanaCluster; endpoint?: URL } = {}
+    opts: {
+      mintingAgent: string
+      agentVersion?: string
+      solanaCluster?: SolanaCluster
+      endpoint?: URL
+    }
   ) {
-    const { solanaCluster, endpoint } = opts
-    const auth = MetaplexAuthWithSecretKey(key, solanaCluster)
+    const { solanaCluster, mintingAgent, agentVersion, endpoint } = opts
+    const auth = MetaplexAuthWithSecretKey(key, {
+      solanaCluster,
+      mintingAgent,
+      agentVersion,
+    })
     return new NFTStorageMetaplexor({ auth, endpoint })
   }
 
@@ -102,6 +113,8 @@ export class NFTStorageMetaplexor {
    * @param signMessage - a function that asynchronously returns a signature of an input message
    * @param publicKey - the public key that can validate signatures produced by the signer
    * @param opts
+   * @param opts.mintingAgent - the "user agent" or tool used to prepare the upload. See {@link TagMintingAgent} for details.
+   * @param opts.agentVersion - an optional version of the `mintingAgent`. See {@link TagMintingAgentVersion} for details.
    * @param opts.solanaCluster - the Solana cluster that the uploaded NFTs are to be minted on. defaults to 'devnet' if not provided.
    * @param opts.endpoint - the URL of the NFT.Storage API. defaults to 'https://api.nft.storage' if not provided.
    * @returns
@@ -109,10 +122,19 @@ export class NFTStorageMetaplexor {
   static withSigner(
     signMessage: Signer,
     publicKey: Uint8Array,
-    opts: { solanaCluster?: SolanaCluster; endpoint?: URL } = {}
+    opts: {
+      mintingAgent: string
+      agentVersion?: string
+      solanaCluster?: SolanaCluster
+      endpoint?: URL
+    }
   ) {
-    const { solanaCluster, endpoint } = opts
-    const auth = MetaplexAuthWithSigner(signMessage, publicKey, solanaCluster)
+    const { solanaCluster, mintingAgent, agentVersion, endpoint } = opts
+    const auth = MetaplexAuthWithSigner(signMessage, publicKey, {
+      solanaCluster,
+      mintingAgent,
+      agentVersion,
+    })
     return new NFTStorageMetaplexor({ auth, endpoint })
   }
 
