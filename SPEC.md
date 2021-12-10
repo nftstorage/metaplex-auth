@@ -71,7 +71,7 @@ Indicates the blockchain that will be used for minting. Currently the only valid
 
 Indicates which [Solana cluster](https://docs.solana.com/clusters) will be used for minting. Must be provided when `chain == "solana"`. Acceptable values are: `"mainnet-beta"`, `"devnet"`, `"testnet"`.
 
-**Note:** an earlier draft of this spec & library used the key `solana-cluster` for this tag. This was changed to "camel case" for consistency and to play nice with JavaScript conventions. The original key will be supported on the backend for a short time, but support will be removed in early 2022.
+**Note:** an earlier draft of this spec & library used the key `solana-cluster` for this tag. This was changed to "camel case" for consistency and to play nice with JavaScript conventions.
 
 ##### `mintingAgent`
 
