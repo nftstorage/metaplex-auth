@@ -2,7 +2,21 @@ import { describe, it, before } from 'mocha'
 import { expect } from 'chai'
 import * as nacl from 'tweetnacl'
 
-import { MetaplexAuthWithSecretKey, makeMetaplexUploadToken, keyDID } from '../src/auth'
+import {
+  MetaplexAuthWithSecretKey,
+  makeMetaplexUploadToken,
+  keyDID,
+} from '../src/auth'
+
+describe('MetaplexAuthWithSecretKey', () => {
+  it('requires a mintingAgent option', () => {
+    const kp = nacl.sign.keyPair()
+    const fn = () =>
+      // @ts-ignore
+      MetaplexAuthWithSecretKey(kp.secretKey, { solanaCluster: 'devnet' })
+    expect(fn).to.throw('mintingAgent')
+  })
+})
 
 describe('makeMetaplexUploadToken', () => {
   let publicKey: Uint8Array
@@ -15,7 +29,10 @@ describe('makeMetaplexUploadToken', () => {
   })
 
   it('creates a valid JWT token with a valid AuthContext', async () => {
-    const auth = await MetaplexAuthWithSecretKey(secretKey, 'devnet')
+    const auth = await MetaplexAuthWithSecretKey(secretKey, {
+      mintingAgent: 'unit-tests',
+      solanaCluster: 'devnet',
+    })
     const cid = 'bafybeia7i25oibtrqmnb62lty4fegl5o7q7363rax52zvafgigx23og4fy'
     const token = await makeMetaplexUploadToken(auth, cid)
     expect(token).to.not.be.empty
@@ -33,7 +50,7 @@ describe('makeMetaplexUploadToken', () => {
     expect(payload.req.put.rootCID).to.eq(cid)
 
     expect(payload.req.put.tags.chain).to.eq('solana')
-    expect(payload.req.put.tags['solana-cluster']).to.eq('devnet')
+    expect(payload.req.put.tags.solanaCluster).to.eq('devnet')
 
     const sig = Buffer.from(tokenParts[2]!, 'base64url')
     const msg = Buffer.from(tokenParts[0] + '.' + tokenParts[1], 'utf-8')

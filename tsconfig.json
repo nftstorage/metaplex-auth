@@ -64,5 +64,5 @@
     "resolveJsonModule": true /* allow importing json files */
   },
   "include": ["src", "test"],
-  "files": ["test/fixtures/metadata.json"]
+  "files": ["package.json", "test/fixtures/metadata.json"]
 }
