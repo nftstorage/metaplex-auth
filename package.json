@@ -51,7 +51,7 @@
     "ajv": "^8.8.1",
     "files-from-path": "^0.2.1",
     "multiformats": "^9.4.10",
-    "nft.storage": "^4.0.0",
+    "nft.storage": "^5.2.0",
     "p-retry": "^5.0.0",
     "streaming-iterables": "^6.0.0",
     "ts-command-line-args": "^2.2.0",
