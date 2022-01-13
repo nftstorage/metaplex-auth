@@ -1,4 +1,3 @@
-import { CID } from 'multiformats'
 import { importCar } from './importer.mjs'
 import { Response, Request } from './mock-server.mjs'
 
@@ -45,7 +44,7 @@ export const init = (
  * @param {Request} request
  * @param {State} state
  */
-export const handle = async (request, { store, AUTH_TOKEN }) => {
+export const handle = async (request, { store }) => {
   const url = new URL(request.url)
 
   const [_, ...pathParts] = url.pathname.split('/')

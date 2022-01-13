@@ -167,6 +167,7 @@ export class Request extends FetchRequest {
    */
   // @ts-ignore - we want ReadableStream not node stream
   get body() {
+    // @ts-ignore
     return bodyOf(this)
   }
 
@@ -204,6 +205,7 @@ export class Response extends FetchResponse {
    */
   // @ts-ignore - we want ReadableStream not node stream
   get body() {
+    // @ts-ignore - we want ReadableStream not node stream
     return bodyOf(this)
   }
 
@@ -271,6 +273,8 @@ export class Service {
         method: incoming.method,
         // @ts-ignore - headers don't have right type
         headers: new Headers({ ...incoming.headers }),
+
+        // @ts-ignore
         body: toBody(incoming),
       })
 
@@ -278,6 +282,7 @@ export class Service {
       const headers = Object.fromEntries(response.headers.entries())
       outgoing.writeHead(response.status, headers)
       const body = response.body ? response.body : []
+      // @ts-ignore
       for await (const chunk of body) {
         outgoing.write(chunk)
       }
