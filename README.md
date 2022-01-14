@@ -28,6 +28,23 @@ The main entry point into the API is the [NFTStorageMetaplexor class](https://nf
 
 To create an `NFTStorageMetaplexor`, you'll need either a Solana private signing key or a `signMessage` function that can return a valid Ed25519 signature for a Solana account (for example, from a [wallet adapter](https://github.com/solana-labs/wallet-adapter)).
 
+The methods for creating an `NFTStorageMetaplexor` also require a `mintingAgent` string.
+
+The `mintingAgent` should identify the tool or platform used to prepare the upload.
+
+Projects using this library are free to choose their own value for this tag, however you should avoid changing the name over time, unless the project itself changes names (for example, due to a community fork or re-branding).
+
+For personal projects or individuals creating tools that are not affiliated with a public platform, please set the value to a URL for your code repository. If your code is not yet public, please create a repository containing a description of the project and links to its public-facing interface.
+
+Examples of suitable values:
+
+- `"metaplex/candy-machine-cli"`
+- `"metaplex/js-sdk"`
+- `"magiceden/mint-authority"`
+- `"https://github.com/samuelvanderwaal/metaboss"`
+
+You may also optionally pass an `agentVersion` string, to differentiate between different versions of your project.
+
 #### With secret key
 
 The [`NFTStorageMetaplexor.withSecretKey` static method](https://nftstorage.github.io/metaplex-auth/classes/NFTStorageMetaplexor.html#withSecretKey) accepts a `Uint8Array` containing a secret Ed25519 signing key.
@@ -40,7 +57,8 @@ import { NFTStorageMetaplexor } from '@nftstorage/metaplex-auth'
 const key = loadKeyFromSomewhere()
 const client = NFTStorageMetaplexor.withSecretKey(key, {
   solanaCluster: 'mainnet-beta',
-}) // or 'devnet'
+  mintingAgent: 'my-awesome-tool',
+})
 ```
 
 #### With wallet adapter
@@ -55,6 +73,7 @@ const MyComponent = () => {
   const { publicKey, signMessage } = useWallet()
   const client = NFTStorageMetaplexor.withSigner(signMessage, publicKey, {
     solanaCluster: 'mainnet-beta',
+    mintingAgent: 'my-awesome-tool',
   })
 }
 ```
