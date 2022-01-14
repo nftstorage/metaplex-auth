@@ -5,10 +5,10 @@ import {
   MetaplexAuthWithSecretKey,
   MetaplexAuthWithSigner,
   SolanaCluster,
-} from './auth'
+} from './auth.js'
 import { CarReader, NFTStorage } from 'nft.storage'
-import { PackagedNFT, loadNFTFromFilesystem } from './nft'
-import { isBrowser } from './utils'
+import { PackagedNFT, loadNFTFromFilesystem } from './nft/index.js'
+import { isBrowser } from './utils.js'
 import type { CID } from 'multiformats'
 
 const DEFAULT_ENDPOINT = new URL('https://api.nft.storage')

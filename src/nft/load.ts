@@ -1,8 +1,8 @@
 import { File } from 'nft.storage'
-import { ensureValidMetadata } from '../metadata'
-import { prepareMetaplexNFT } from './prepare'
-import type { PackagedNFT } from './prepare'
-import { isBrowser } from '../utils'
+import { ensureValidMetadata } from '../metadata/index.js'
+import { prepareMetaplexNFT } from './prepare.js'
+import type { PackagedNFT } from './prepare.js'
+import { isBrowser } from '../utils.js'
 
 /**
  * Loads a Metaplex NFT from the filesystem, including metadata json, main image, and any

@@ -5,8 +5,8 @@ import {
   MetaplexAuthWithSecretKey,
   SolanaCluster,
   makeMetaplexUploadToken,
-} from './auth'
-import { NFTStorageMetaplexor } from './upload'
+} from './auth.js'
+import { NFTStorageMetaplexor } from './upload.js'
 import { getFilesFromPath } from 'files-from-path'
 import { version as projectVersion } from '../package.json'
 

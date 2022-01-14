@@ -9,10 +9,11 @@
   "publishConfig": {
     "access": "public"
   },
+  "type": "module",
   "exports": {
     ".": {
       "browser": "./dist/index.browser.js",
-      "import": "./dist/index.esm.js",
+      "import": "./dist/src/index.js",
       "require": "./dist/index.cjs"
     }
   },

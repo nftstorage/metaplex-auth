@@ -1,13 +1,16 @@
 import path from 'path'
 import fs from 'fs/promises'
+import { fileURLToPath } from 'url'
 import { describe, it, before } from 'mocha'
 import { expect } from 'chai'
-import * as nacl from 'tweetnacl'
+import nacl from 'tweetnacl'
 import { CID } from 'multiformats'
 import { CarIndexedReader } from '@ipld/car'
 import { getFilesFromPath } from 'files-from-path'
-import { NFTStorageMetaplexor } from '../src/upload'
-import type { AuthContext } from '../src/auth'
+import { NFTStorageMetaplexor } from '../src/upload.js'
+import type { AuthContext } from '../src/auth.js'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 describe('NFTStorageMetaplexor', () => {
   const { SERVICE_ENDPOINT } = process.env
