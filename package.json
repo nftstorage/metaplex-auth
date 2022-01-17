@@ -17,16 +17,19 @@
       "require": "./dist/index.cjs"
     }
   },
+  "browser": {
+    "./src/platform.js": "./src/platform.browser.js"
+  },
   "types": "./dist/src/index.d.ts",
   "scripts": {
     "build": "npm run clean && npm run typecheck && npm run build:all",
     "clean": "rimraf ./dist",
     "typecheck": "tsc",
     "build:all": "npm run build:esm && npm run build:cjs && npm run build:browser",
-    "build:cjs": "mkdirp ./dist && esbuild ./src/index.ts --bundle --format=cjs --platform=node --inject:./src/platform.node.js --target=es2018 --outfile=./dist/index.cjs",
-    "build:esm": "mkdirp ./dist && esbuild ./src/index.ts --bundle --format=esm --platform=node --inject:./src/platform.node.js --target=es2018 --outfile=./dist/index.esm.js",
-    "build:browser": "mkdirp ./dist && esbuild ./src/index.ts --bundle --format=esm --target=es2018 --external:fs --external:path --outfile=./dist/index.browser.js",
-    "build:cli": "mkdirp ./dist && esbuild ./src/cli.ts --bundle --format=cjs --platform=node --inject:./src/platform.node.js --target=es2018 --outfile=./dist/cli.js",
+    "build:cjs": "mkdirp ./dist && esbuild ./src/index.ts --bundle --format=cjs --platform=node  --target=es2020 --outfile=./dist/index.cjs",
+    "build:esm": "mkdirp ./dist && esbuild ./src/index.ts --bundle --format=esm --platform=node --target=es2020 --outfile=./dist/index.esm.js",
+    "build:browser": "mkdirp ./dist && esbuild ./src/index.ts --bundle --format=esm --target=es2018 --external:fs --external:fs/promises --external:path --outfile=./dist/index.browser.js",
+    "build:cli": "mkdirp ./dist && esbuild ./src/cli.ts --bundle --format=cjs --platform=node --target=es2020 --outfile=./dist/cli.js",
     "prepublishOnly": "npm run test && npm run build",
     "test": "node test/utils/test.mjs mocha",
     "typedoc": "typedoc",
@@ -54,9 +57,10 @@
     "multiformats": "^9.4.10",
     "nft.storage": "^5.2.0",
     "p-retry": "^5.0.0",
+    "path-browserify": "^1.0.1",
     "streaming-iterables": "^6.0.0",
     "ts-command-line-args": "^2.2.0",
-    "tweetnacl": "^1.0.3",
+    "tweetnacl-es6": "^1.0.3",
     "varint": "^6.0.0"
   },
   "devDependencies": {
@@ -65,6 +69,7 @@
     "@types/chai": "^4.2.22",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.11.8",
+    "@types/path-browserify": "^1.0.0",
     "@types/varint": "^6.0.0",
     "chai": "^4.3.4",
     "esbuild": "^0.13.12",

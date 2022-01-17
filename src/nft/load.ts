@@ -1,4 +1,5 @@
-import { File } from 'nft.storage'
+import {  File } from 'nft.storage'
+import { fs, path } from '../platform.js'
 import { ensureValidMetadata } from '../metadata/index.js'
 import { prepareMetaplexNFT } from './prepare.js'
 import type { PackagedNFT } from './prepare.js'
@@ -52,11 +53,7 @@ export async function loadNFTFromFilesystem(
   if (isBrowser) {
     throw new Error('loadNFTFromFilesystem is only supported on node.js')
   }
-
-  const fs = await import('fs/promises')
-  const path = await import('path')
-
-  const metadataContent = await fs.readFile(metadataFilePath, {
+  const metadataContent = await fs.promises.readFile(metadataFilePath, {
     encoding: 'utf-8',
   })
   const metadataJSON = JSON.parse(metadataContent)
@@ -133,10 +130,7 @@ async function fileFromPath(
   filepath: string,
   rootDir: string = ''
 ): Promise<File> {
-  const fs = await import('fs/promises')
-  const path = await import('path')
-
-  const content = await fs.readFile(filepath)
+  const content = await fs.promises.readFile(filepath)
   const filename = path.relative(rootDir, filepath)
   return new File([content], filename)
 }
@@ -150,9 +144,8 @@ async function fileExists(filepath: string): Promise<boolean> {
   if (isBrowser) {
     return false
   }
-  const fs = await import('fs/promises')
   try {
-    await fs.stat(filepath)
+    await fs.promises.stat(filepath)
     return true
   } catch (e) {
     return false
