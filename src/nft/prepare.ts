@@ -1,4 +1,4 @@
-import { File } from '../platform'
+import { File } from '../platform.js'
 import { NFTStorage, CarReader } from 'nft.storage'
 import type { CID } from 'multiformats'
 
