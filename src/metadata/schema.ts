@@ -43,7 +43,7 @@ export interface MetaplexMetadata {
   properties: {
     category?: string
     files: Array<FileDescription>
-    creators: CreatorInfo[]
+    creators?: CreatorInfo[]
   }
 }
 
@@ -115,10 +115,11 @@ export const metadataSchema: JSONSchemaType<MetaplexMetadata> = {
         creators: {
           type: 'array',
           items: creatorSchema,
+          nullable: true,
         },
       },
       additionalProperties: true,
-      required: ['files', 'creators'],
+      required: ['files'],
     },
     collection: {
       type: 'object',
