@@ -1,7 +1,10 @@
 import { describe, it } from 'mocha'
 import { expect } from 'chai'
 import path from 'path'
-import { loadNFTFromFilesystem } from '../src/nft'
+import { fileURLToPath } from 'url'
+
+import { loadNFTFromFilesystem } from '../src/nft/index.js'
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 describe('loadNFTFromFilesystem', () => {
   it('finds image file with same name as metadata json if image field is empty', async () => {

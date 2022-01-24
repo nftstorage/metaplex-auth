@@ -1,12 +1,13 @@
-import { NFTStorage, CarReader, File } from 'nft.storage'
+import { File } from '../platform.js'
+import { NFTStorage, CarReader } from 'nft.storage'
 import type { CID } from 'multiformats'
 
 import {
   MetaplexMetadata,
   FileDescription,
   ensureValidMetadata,
-} from '../metadata'
-import { makeGatewayURL, makeIPFSURI } from '../utils'
+} from '../metadata/index.js'
+import { makeGatewayURL, makeIPFSURI } from '../utils.js'
 
 export type EncodedCar = { car: CarReader; cid: CID }
 
@@ -22,15 +23,15 @@ export interface PackagedNFT {
 /**
  * Encodes the given NFT metadata and asset files into CARs that can be uploaded to
  * NFT.Storage.
- * 
+ *
  * First, the `imageFile` and any `additionalAssetFiles` are packed into a CAR,
  * and the root CID of this "asset CAR" is used to create IPFS URIs and gateway
  * URLs for each file in the NFT bundle.
- * 
+ *
  * The input metadata is then modified:
- * 
+ *
  * - The `image` field is set to an HTTP gateway URL for the `imageFile`
- * - If `animation_url` contains a filename that matches the `name` of any 
+ * - If `animation_url` contains a filename that matches the `name` of any
  *   of the `additionalAssetFiles`, its value will be set to an HTTP gateway URL
  *   for that file.
  * - If any entries in `properties.files` have a `uri` that matches the `name`
@@ -38,15 +39,15 @@ export interface PackagedNFT {
  *   by _two_ entries in the output metadata. One will contain an `ipfs://` uri
  *   with `cdn == false`, and the other will have an HTTP gateway URL, with
  *   `cdn == true`.
- * 
+ *
  * This updated metadata is then serialized and packed into a second car.
  * Both CARs are returned in a {@link PackagedNFT} object, which also contains
- * the updated metadata object and links to the metadata. 
- * 
+ * the updated metadata object and links to the metadata.
+ *
  * Note that this function does NOT store anything with NFT.Storage. The links
  * in the returned {@link PackagedNFT} will not resolve until the CARs have been
  * uploaded. Use {@link NFTStorageMetaplexor.storePreparedNFT} to upload.
- * 
+ *
  * @param metadata a JS object containing (hopefully) valid Metaplex NFT metadata
  * @param imageFile a File object containing image data.
  * @param additionalAssetFiles any additional asset files (animations, higher resolution variants, etc)

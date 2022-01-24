@@ -1,5 +1,5 @@
 import Ajv, { DefinedError, ErrorObject } from 'ajv'
-import { MetaplexMetadata, metadataSchema } from './schema'
+import { MetaplexMetadata, metadataSchema } from './schema.js'
 
 const ajv = new Ajv()
 

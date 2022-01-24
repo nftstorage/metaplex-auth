@@ -1,12 +1,12 @@
 import { describe, it, before } from 'mocha'
 import { expect } from 'chai'
-import * as nacl from 'tweetnacl'
+import nacl from 'tweetnacl'
 
 import {
   MetaplexAuthWithSecretKey,
   makeMetaplexUploadToken,
   keyDID,
-} from '../src/auth'
+} from '../src/auth.js'
 
 describe('MetaplexAuthWithSecretKey', () => {
   it('requires a mintingAgent option', () => {
