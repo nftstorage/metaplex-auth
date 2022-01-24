@@ -29,7 +29,7 @@
     "build:cjs": "mkdirp ./dist && esbuild ./src/index.ts --bundle --format=cjs --platform=node  --target=es2018 --outfile=./dist/index.cjs",
     "build:esm": "mkdirp ./dist && esbuild ./src/index.ts --bundle --format=esm --platform=node --target=es2018 --outfile=./dist/index.esm.js",
     "build:browser": "mkdirp ./dist && esbuild ./src/index.ts --bundle --format=esm --target=es2018 --outfile=./dist/index.browser.js --external:stream/web",
-    "build:cli": "mkdirp ./dist && esbuild ./src/cli.ts --bundle --format=cjs --platform=node --target=es2018 --outfile=./dist/cli.js",
+    "build:cli": "mkdirp ./dist && esbuild ./src/cli.ts --bundle --format=cjs --platform=node --target=es2018 --outfile=./dist/cli.cjs",
     "prepublishOnly": "npm run test && npm run build",
     "test": "node test/utils/test.mjs mocha",
     "typedoc": "typedoc",
