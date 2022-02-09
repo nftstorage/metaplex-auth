@@ -8,6 +8,7 @@ import { CID } from 'multiformats'
 import { CarIndexedReader } from '@ipld/car'
 import { getFilesFromPath } from 'files-from-path'
 import { NFTStorageMetaplexor } from '../src/upload.js'
+import { Blob } from '../src/platform.js'
 import type { AuthContext } from '../src/auth.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -51,6 +52,18 @@ describe('NFTStorageMetaplexor', () => {
       const { msg, sig } = await signRandomMessage(client.auth)
       const valid = nacl.sign.detached.verify(msg, sig, publicKey)
       expect(valid, 'AuthContext created invalid signature for public key')
+    })
+  })
+
+  describe('storeBlob', () => {
+    it('posts a CAR to /metaplex/upload', async () => {
+      const client = NFTStorageMetaplexor.withSecretKey(secretKey, {
+        endpoint,
+        mintingAgent: 'unit-tests',
+      })
+      const blob = new Blob(['hello world'])
+      const cid = await client.storeBlob(blob)
+      expect(cid).to.not.be.empty
     })
   })
 

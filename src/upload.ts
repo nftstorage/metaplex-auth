@@ -139,6 +139,23 @@ export class NFTStorageMetaplexor {
   }
 
   /**
+   * Stores a single Blob (or File) with NFT.Storage, without wrapping in a directory listing.
+   * If a File is provided, any filenames will be ignored and will not be preserved on IPFS.
+   *
+   * @param context information required to authenticate uploads
+   * @param blob a Blob or File object to store
+   * @returns CID string for the stored content
+   */
+  static async storeBlob(
+    context: ServiceContext,
+    blob: Blob
+  ): Promise<CIDString> {
+    this.init()
+    const { cid, car } = await NFTStorage.encodeBlob(blob)
+    return this.storeCar(context, cid, car)
+  }
+
+  /**
    * Stores one or more files with NFT.Storage, bundling them into an IPFS directory.
    *
    * If the `files` contain directory paths in their `name`s, they MUST all share the same
@@ -245,6 +262,18 @@ export class NFTStorageMetaplexor {
   }
 
   // -- instance methods are just "sugar" around the static methods, using `this` as the ServiceContext parameter
+
+  /**
+   * Stores a single Blob (or File) with NFT.Storage, without wrapping in a directory listing.
+   * If a File is provided, any filenames will be ignored and will not be preserved on IPFS.
+   *
+   * @param blob a Blob or File object to store
+   * @returns CID string for the stored content
+   */
+  async storeBlob(blob: Blob): Promise<CIDString> {
+    const { cid, car } = await NFTStorage.encodeBlob(blob)
+    return NFTStorageMetaplexor.storeCar(this, cid, car)
+  }
 
   /**
    * Stores a Content Archive (CAR) containing content addressed data.
