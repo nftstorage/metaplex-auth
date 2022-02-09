@@ -1,3 +1,7 @@
+# 2022-02-09 - v1.1.0
+
+- [Add `storeBlob` methods](https://github.com/nftstorage/metaplex-auth/pull/37)
+
 # 2022-01-24 - v1.0.0
 
 To celebrate our first breaking API change after the initial release, we're bumping the major version to 1.0.0 to be good [semver](https://semver.org/) citizens.
