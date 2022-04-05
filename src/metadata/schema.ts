@@ -32,9 +32,9 @@ export interface CollectionInfo {
  */
 export interface MetaplexMetadata {
   name: string
-  symbol: string
+  symbol?: string
   description?: string
-  seller_fee_basis_points: number
+  seller_fee_basis_points?: number
   image: string
   animation_url?: string
   external_url?: string
@@ -93,9 +93,9 @@ export const metadataSchema: JSONSchemaType<MetaplexMetadata> = {
   type: 'object',
   properties: {
     name: { type: 'string' },
-    symbol: { type: 'string' },
+    symbol: { type: 'string', nullable: true },
     description: { type: 'string', nullable: true },
-    seller_fee_basis_points: { type: 'number' },
+    seller_fee_basis_points: { type: 'number', nullable: true },
     image: { type: 'string' },
     animation_url: { type: 'string', nullable: true },
     external_url: { type: 'string', nullable: true },
@@ -131,11 +131,5 @@ export const metadataSchema: JSONSchemaType<MetaplexMetadata> = {
       required: ['name', 'family'],
     },
   },
-  required: [
-    'name',
-    'symbol',
-    'seller_fee_basis_points',
-    'image',
-    'properties',
-  ],
+  required: ['name', 'image', 'properties'],
 }
