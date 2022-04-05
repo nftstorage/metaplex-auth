@@ -1,5 +1,5 @@
 import { File } from '../platform.js'
-import { NFTStorage, CarReader } from 'nft.storage'
+import { NFTStorage, CarReader, BlockstoreI } from 'nft.storage'
 import type { CID } from 'multiformats'
 
 import {
@@ -8,6 +8,7 @@ import {
   ensureValidMetadata,
 } from '../metadata/index.js'
 import { makeGatewayURL, makeIPFSURI } from '../utils.js'
+import { Blockstore } from '../platform.js'
 
 export type EncodedCar = { car: CarReader; cid: CID }
 
@@ -18,6 +19,7 @@ export interface PackagedNFT {
 
   encodedMetadata: EncodedCar
   encodedAssets: EncodedCar
+  blockstore: BlockstoreI
 }
 
 /**
@@ -50,18 +52,25 @@ export interface PackagedNFT {
  *
  * @param metadata a JS object containing (hopefully) valid Metaplex NFT metadata
  * @param imageFile a File object containing image data.
- * @param additionalAssetFiles any additional asset files (animations, higher resolution variants, etc)
+ * @param [opts]
+ * @param opts.additionalAssetFiles any additional asset files (animations, higher resolution variants, etc)
  * @returns
  */
 export async function prepareMetaplexNFT(
   metadata: Record<string, any>,
   imageFile: File,
-  ...additionalAssetFiles: File[]
+  opts: {
+    additionalAssetFiles?: File[]
+    blockstore?: BlockstoreI
+  } = {}
 ): Promise<PackagedNFT> {
   const validated = ensureValidMetadata(metadata)
-
+  const additionalAssetFiles = opts.additionalAssetFiles || []
+  const blockstore = opts.blockstore || new Blockstore()
   const assetFiles = [imageFile, ...additionalAssetFiles]
-  const encodedAssets = await NFTStorage.encodeDirectory(assetFiles)
+  const encodedAssets = await NFTStorage.encodeDirectory(assetFiles, {
+    blockstore,
+  })
 
   const imageFilename = imageFile.name || 'image.png'
   const additionalFilenames = additionalAssetFiles.map((f) => f.name)
@@ -76,7 +85,9 @@ export async function prepareMetaplexNFT(
     [JSON.stringify(linkedMetadata)],
     'metadata.json'
   )
-  const encodedMetadata = await NFTStorage.encodeDirectory([metadataFile])
+  const encodedMetadata = await NFTStorage.encodeDirectory([metadataFile], {
+    blockstore,
+  })
   const metadataGatewayURL = makeGatewayURL(
     encodedMetadata.cid.toString(),
     'metadata.json'
@@ -92,6 +103,7 @@ export async function prepareMetaplexNFT(
     encodedAssets,
     metadataGatewayURL,
     metadataURI,
+    blockstore,
   }
 }
 

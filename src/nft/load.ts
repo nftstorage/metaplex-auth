@@ -1,4 +1,4 @@
-import {  File } from 'nft.storage'
+import { BlockstoreI, File } from 'nft.storage'
 import { fs, path } from '../platform.js'
 import { ensureValidMetadata } from '../metadata/index.js'
 import { prepareMetaplexNFT } from './prepare.js'
@@ -42,13 +42,18 @@ import { isBrowser } from '../utils.js'
  * @param metadataFilePath path to a JSON file containing Metaplex NFT metadata
  * @param imageFilePath path to an image to be used as the primary `image` content for the NFT. If not provided,
  * the image will be located as described above.
+ * @param opts
+ * @param opts.blockstore a Blockstore instance to use when packing objects into CARs. If not provided, a new temporary Blockstore will be created.
  *
  * @returns on success, a {@link PackagedNFT} object containing the parsed metadata and the CAR data to upload
  * to NFT.Storage.
  */
 export async function loadNFTFromFilesystem(
   metadataFilePath: string,
-  imageFilePath?: string
+  imageFilePath?: string,
+  opts: {
+    blockstore?: BlockstoreI
+  } = {}
 ): Promise<PackagedNFT> {
   if (isBrowser) {
     throw new Error('loadNFTFromFilesystem is only supported on node.js')
@@ -104,10 +109,13 @@ export async function loadNFTFromFilesystem(
   const additionalFilePromises = [...additionalFilePaths].map((p) =>
     fileFromPath(p, parentDir)
   )
-  const additionalFiles = await Promise.all(additionalFilePromises)
+  const additionalAssetFiles = await Promise.all(additionalFilePromises)
 
   // package up for storage and return the result
-  return prepareMetaplexNFT(metadata, imageFile, ...additionalFiles)
+  return prepareMetaplexNFT(metadata, imageFile, {
+    additionalAssetFiles,
+    blockstore: opts.blockstore,
+  })
 }
 
 // helpers

@@ -19,3 +19,6 @@ export { dummyFS as fs }
 
 import _path from 'path-browserify'
 export { _path as path }
+
+import { MemoryBlockStore } from 'ipfs-car/blockstore/memory'
+export { MemoryBlockStore as Blockstore }
