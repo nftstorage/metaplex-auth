@@ -5,7 +5,7 @@ import * as dagCbor from '@ipld/dag-cbor'
 
 import { Blockstore } from '../platform.js'
 import { BlockstoreCarReader } from './bs-car-reader.js'
-import { prepareMetaplexNFT } from './prepare.js'
+import { PackagedNFT, prepareMetaplexNFT } from './prepare.js'
 import { CID } from 'multiformats'
 
 export type NFTManifestEntry = {
@@ -35,7 +35,7 @@ export class NFTBundle {
     opts: {
       additionalAssetFiles?: File[]
     } = {}
-  ) {
+  ): Promise<PackagedNFT> {
     const nft = await prepareMetaplexNFT(metadata, imageFile, {
       ...opts,
       blockstore: this._blockstore,
@@ -45,6 +45,7 @@ export class NFTBundle {
       assets: nft.encodedAssets.cid,
     }
     this._nfts.push(entry)
+    return nft
   }
 
   manifest(): NFTManifest {
