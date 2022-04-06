@@ -1,6 +1,6 @@
 import { BlockstoreI, File } from 'nft.storage'
 import { fs, path } from '../platform.js'
-import { ensureValidMetadata } from '../metadata/index.js'
+import { ensureValidMetadata, MetaplexMetadata } from '../metadata/index.js'
 import { prepareMetaplexNFT } from './prepare.js'
 import type { PackagedNFT } from './prepare.js'
 import { isBrowser } from '../utils.js'
@@ -44,6 +44,8 @@ import { isBrowser } from '../utils.js'
  * the image will be located as described above.
  * @param opts
  * @param opts.blockstore a Blockstore instance to use when packing objects into CARs. If not provided, a new temporary Blockstore will be created.
+ * @param opts.validateSchema if true, validate the metadata against a JSON schema before processing. off by default
+ * @param opts.gatewayHost the hostname of an IPFS HTTP gateway to use in metadata links. Defaults to "nftstorage.link" if not set.
  *
  * @returns on success, a {@link PackagedNFT} object containing the parsed metadata and the CAR data to upload
  * to NFT.Storage.
@@ -53,6 +55,8 @@ export async function loadNFTFromFilesystem(
   imageFilePath?: string,
   opts: {
     blockstore?: BlockstoreI
+    validateSchema?: boolean
+    gatewayHost?: string
   } = {}
 ): Promise<PackagedNFT> {
   if (isBrowser) {
@@ -62,7 +66,9 @@ export async function loadNFTFromFilesystem(
     encoding: 'utf-8',
   })
   const metadataJSON = JSON.parse(metadataContent)
-  const metadata = ensureValidMetadata(metadataJSON)
+  const metadata = opts.validateSchema
+    ? ensureValidMetadata(metadataJSON)
+    : (metadataJSON as unknown as MetaplexMetadata)
 
   const parentDir = path.dirname(metadataFilePath)
 
@@ -94,7 +100,9 @@ export async function loadNFTFromFilesystem(
 
   // look for valid file paths in `properties.files`
   const additionalFilePaths = new Set<string>()
-  for (const f of metadata.properties.files) {
+  const properties = metadata.properties || {}
+  const files = properties.files || []
+  for (const f of files) {
     const filepath = path.resolve(parentDir, f.uri)
     if (await fileExists(filepath)) {
       additionalFilePaths.add(filepath)
@@ -115,6 +123,8 @@ export async function loadNFTFromFilesystem(
   return prepareMetaplexNFT(metadata, imageFile, {
     additionalAssetFiles,
     blockstore: opts.blockstore,
+    gatewayHost: opts.gatewayHost,
+    validateSchema: opts.validateSchema,
   })
 }
 
@@ -122,15 +132,15 @@ export async function* loadAllNFTsFromDirectory(
   directoryPath: string,
   opts: {
     blockstore?: BlockstoreI
+    validateSchema?: boolean
+    gatewayHost?: string
   } = {}
 ): AsyncGenerator<PackagedNFT> {
   for await (const filename of walk(directoryPath)) {
     if (!filename.endsWith('.json')) {
       continue
     }
-    const nft = await loadNFTFromFilesystem(filename, undefined, {
-      blockstore: opts.blockstore,
-    })
+    const nft = await loadNFTFromFilesystem(filename, undefined, opts)
     yield nft
   }
 }

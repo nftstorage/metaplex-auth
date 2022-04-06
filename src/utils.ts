@@ -1,4 +1,4 @@
-const GATEWAY_HOST = 'https://nftstorage.link'
+export const DEFAULT_GATEWAY_HOST = 'https://nftstorage.link'
 
 export const isBrowser =
   typeof window !== 'undefined' && typeof window.document !== 'undefined'
@@ -6,7 +6,7 @@ export const isBrowser =
 export function makeGatewayURL(
   cid: string,
   path: string,
-  host: string = GATEWAY_HOST
+  host: string = DEFAULT_GATEWAY_HOST
 ): string {
   let pathPrefix = `/ipfs/${cid}`
   if (path) {

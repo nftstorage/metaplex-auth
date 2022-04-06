@@ -56,6 +56,7 @@ export interface PackagedNFT {
  * @param opts.additionalAssetFiles any additional asset files (animations, higher resolution variants, etc)
  * @param opts.blockstore blockstore to use when importing data. if not provided, a temporary blockstore will be created
  * @param opts.validateSchema if true, validate the metadata against a JSON schema before processing. off by default
+ * @param opts.gatewayHost the hostname of an IPFS HTTP gateway to use in metadata links. Defaults to "nftstorage.link" if not set.
  * @returns
  */
 export async function prepareMetaplexNFT(
@@ -65,6 +66,7 @@ export async function prepareMetaplexNFT(
     additionalAssetFiles?: File[]
     blockstore?: BlockstoreI
     validateSchema?: boolean
+    gatewayHost?: string
   } = {}
 ): Promise<PackagedNFT> {
   const metaplexMetadata = opts.validateSchema
@@ -73,6 +75,7 @@ export async function prepareMetaplexNFT(
 
   const additionalAssetFiles = opts.additionalAssetFiles || []
   const blockstore = opts.blockstore || new Blockstore()
+
   const assetFiles = [imageFile, ...additionalAssetFiles]
   const encodedAssets = await NFTStorage.encodeDirectory(assetFiles, {
     blockstore,
@@ -117,9 +120,14 @@ function replaceFileRefsWithIPFSLinks(
   metadata: MetaplexMetadata,
   imageFilename: string,
   additionalFilenames: string[],
-  assetRootCID: string
+  assetRootCID: string,
+  gatewayHost?: string
 ): MetaplexMetadata {
-  const imageGatewayURL = makeGatewayURL(assetRootCID, imageFilename)
+  const imageGatewayURL = makeGatewayURL(
+    assetRootCID,
+    imageFilename,
+    gatewayHost
+  )
 
   // since we may have skipped schema validation, we need to make sure properties.files exists
   const properties = metadata.properties || {}
@@ -150,7 +158,7 @@ function replaceFileRefsWithIPFSLinks(
   // If animation_url matches a filename, replace with gateway url
   let animation_url = metadata.animation_url
   if (animation_url && additionalFilenames.includes(animation_url)) {
-    animation_url = makeGatewayURL(assetRootCID, animation_url)
+    animation_url = makeGatewayURL(assetRootCID, animation_url, gatewayHost)
   }
 
   return {
