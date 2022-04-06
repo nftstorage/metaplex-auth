@@ -436,4 +436,33 @@ export class NFTStorageMetaplexor {
       imageFilePath
     )
   }
+
+  /**
+   * Searches the given `directoryPath` for .json files, which are assumed to be metadata conforming to the
+   * Metaplex metadata standard. All discovered metadata files are loaded using {@link loadNFTFromFilesystem}
+   * and bundled into a single CAR for upload using the {@link NFTBundle} helper class.
+   *
+   * @param directoryPath path to a directory containing NFT metadata and assets
+   * @param opts
+   * @param opts.onNFTLoaded callback invoked when an NFT is loaded from disk and added to the bundle, but before anything has been uploaded. For upload progress, set storeCarOptions.onStoredChunk.
+   * @param opts.validateSchema if true, validate the metadata against a JSON schema before processing. off by default
+   * @param opts.gatewayHost the hostname of an IPFS HTTP gateway to use in metadata links. Defaults to "nftstorage.link" if not set.
+   * @param opts.storeCarOptions options to pass through to NFTStorage.storeCar
+   * @returns an object containing a "manifest" with the CIDs for each NFT's metadata and asset directories.
+   */
+  async storeAllNFTsInDirectory(
+    directoryPath: string,
+    opts: {
+      gatewayHost?: string
+      validateSchema?: boolean
+      onNFTLoaded?: (nft: PackagedNFT) => void
+      storeCarOptions?: CarStorerOptions
+    } = {}
+  ) {
+    return NFTStorageMetaplexor.storeAllNFTsInDirectory(
+      this,
+      directoryPath,
+      opts
+    )
+  }
 }
