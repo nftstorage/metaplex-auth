@@ -9,12 +9,14 @@ import {
 import { NFTStorageMetaplexor } from './upload.js'
 import { getFilesFromPath } from 'files-from-path'
 import { version as projectVersion } from '../package.json'
+import { makeGatewayURL } from './utils.js'
 
 interface IArgs {
   keyfile: string
   cluster: string
   endpoint: string
   testCID?: string
+  bundle: boolean
   files?: string[]
 }
 
@@ -41,6 +43,12 @@ const args = parse<IArgs>({
     optional: true,
     description: `CID to create a test token for. If present, upload will be skipped and token will be printed to the console.`,
   },
+  bundle: {
+    type: Boolean,
+    description:
+      'if true, the input file paths will be treated as directories full of metaplex nfts, and will be uploaded as a single CAR bundle',
+    defaultValue: false,
+  },
   files: { type: String, optional: true, multiple: true, defaultOption: true },
 })
 
@@ -49,29 +57,8 @@ if (!CLUSTER_VALUES.includes(args.cluster)) {
   process.exit(1)
 }
 
-async function main() {
-  const auth = await makeAuthContext(
-    args.keyfile,
-    args.cluster as SolanaCluster
-  )
-
-  if (args.testCID) {
-    const token = await makeMetaplexUploadToken(auth, args.testCID)
-    console.log('token: ', token)
-    return
-  }
-
-  if (!args.files) {
-    console.error('must provide file path argument when --testCID is not set')
-    process.exit(1)
-  }
-
-  const files = await getFilesFromPath(args.files)
-
-  const client = new NFTStorageMetaplexor({
-    auth,
-    endpoint: new URL(args.endpoint),
-  })
+async function storeFiles(client: NFTStorageMetaplexor, paths: string[]) {
+  const files = await getFilesFromPath(paths)
   console.log(`uploading ${files.length} file${files.length > 1 ? 's' : ''}...`)
 
   // @ts-ignore - todo: figure out correct type to use for File param
@@ -93,6 +80,62 @@ async function main() {
   console.log(ipfsURIs.join('\n'))
   console.log('-------- HTTP Gateway URLs: --------')
   console.log(gatewayURLs.join('\n'))
+}
+
+async function storeNFTBundle(client: NFTStorageMetaplexor, paths: string[]) {
+  for (const dirPath of paths) {
+    console.log('storing NFTs from directory ' + dirPath)
+    const { bundleCID, manifest } = await client.storeAllNFTsInDirectory(
+      dirPath,
+      {
+        onNFTLoaded: (nft) => {
+          console.log('loaded NFT into bundle: ', nft.metadata.name)
+        },
+        storeCarOptions: {
+          onStoredChunk: (size) => {
+            console.log(`uploaded ${size} bytes to nft.storage`)
+          },
+        },
+      }
+    )
+
+    console.log('bundle root CID:', bundleCID)
+
+    console.log('NFT gateway URLs:')
+    for (const nft of manifest.nfts) {
+      const url = makeGatewayURL(nft.metadata.toString(), 'metadata.json')
+      console.log(url)
+    }
+  }
+}
+
+async function main() {
+  const auth = await makeAuthContext(
+    args.keyfile,
+    args.cluster as SolanaCluster
+  )
+
+  if (args.testCID) {
+    const token = await makeMetaplexUploadToken(auth, args.testCID)
+    console.log('token: ', token)
+    return
+  }
+
+  if (!args.files) {
+    console.error('must provide file path argument when --testCID is not set')
+    process.exit(1)
+  }
+
+  const client = new NFTStorageMetaplexor({
+    auth,
+    endpoint: new URL(args.endpoint),
+  })
+
+  if (args.bundle) {
+    await storeNFTBundle(client, args.files)
+  } else {
+    await storeFiles(client, args.files)
+  }
 }
 
 async function loadKey(keyfilePath: string): Promise<Uint8Array> {
