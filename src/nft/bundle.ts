@@ -1,4 +1,4 @@
-import { BlockstoreI, CarReader } from 'nft.storage'
+import { BlockstoreI } from 'nft.storage'
 import * as Block from 'multiformats/block'
 import { sha256 } from 'multiformats/hashes/sha2'
 import * as dagCbor from '@ipld/dag-cbor'
@@ -7,6 +7,8 @@ import { Blockstore } from '../platform.js'
 import { BlockstoreCarReader } from './bs-car-reader.js'
 import { PackagedNFT, prepareMetaplexNFT } from './prepare.js'
 import { CID } from 'multiformats'
+import { loadAllNFTsFromDirectory, loadNFTFromFilesystem } from './load.js'
+import type { EncodedCar } from './prepare.js'
 
 export type NFTManifestEntry = {
   metadata: CID
@@ -40,12 +42,38 @@ export class NFTBundle {
       ...opts,
       blockstore: this._blockstore,
     })
+    this._addManifestEntry(nft)
+    return nft
+  }
+
+  async addNFTFromFileSystem(
+    metadataFilePath: string,
+    imageFilePath?: string
+  ): Promise<PackagedNFT> {
+    const nft = await loadNFTFromFilesystem(metadataFilePath, imageFilePath, {
+      blockstore: this._blockstore,
+    })
+    this._addManifestEntry(nft)
+    return nft
+  }
+
+  async *addAllNFTsFromDirectory(
+    directoryPath: string
+  ): AsyncGenerator<PackagedNFT> {
+    for await (const nft of loadAllNFTsFromDirectory(directoryPath, {
+      blockstore: this._blockstore,
+    })) {
+      this._addManifestEntry(nft)
+      yield nft
+    }
+  }
+
+  private _addManifestEntry(nft: PackagedNFT) {
     const entry = {
       metadata: nft.encodedMetadata.cid,
       assets: nft.encodedAssets.cid,
     }
     this._nfts.push(entry)
-    return nft
   }
 
   manifest(): NFTManifest {
@@ -59,10 +87,12 @@ export class NFTBundle {
     return Block.encode({ value: rootDAG, codec: dagCbor, hasher: sha256 })
   }
 
-  async asCAR(): Promise<CarReader> {
+  async asCAR(): Promise<EncodedCar> {
     const rootBlock = await this.manifestBlock()
     await this._blockstore.put(rootBlock.cid, rootBlock.bytes)
 
-    return new BlockstoreCarReader(1, [rootBlock.cid], this._blockstore)
+    const car = new BlockstoreCarReader(1, [rootBlock.cid], this._blockstore)
+    const cid = rootBlock.cid
+    return { car, cid }
   }
 }

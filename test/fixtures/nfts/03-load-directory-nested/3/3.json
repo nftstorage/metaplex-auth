@@ -1,0 +1,22 @@
+{
+  "name": "Test NFT.Storage Metaplex NFT #3",
+  "symbol": "PLTEST",
+  "description": "Just a test, nothing to see here",
+  "seller_fee_basis_points": 0,
+  "image": "3.png",
+  "properties": {
+    "files": [
+      {
+        "uri": "3.png",
+        "type": "image/png"
+      }
+    ],
+    "category": "image",
+    "creators": [
+      {
+        "address": "3eoKfwCQ4jMBD5CEpLM8aCTZVN7wGQ9KTUBHhksmaZNh",
+        "share": 100
+      }
+    ]
+  }
+}

@@ -118,6 +118,23 @@ export async function loadNFTFromFilesystem(
   })
 }
 
+export async function* loadAllNFTsFromDirectory(
+  directoryPath: string,
+  opts: {
+    blockstore?: BlockstoreI
+  } = {}
+): AsyncGenerator<PackagedNFT> {
+  for await (const filename of walk(directoryPath)) {
+    if (!filename.endsWith('.json')) {
+      continue
+    }
+    const nft = await loadNFTFromFilesystem(filename, undefined, {
+      blockstore: opts.blockstore,
+    })
+    yield nft
+  }
+}
+
 // helpers
 
 /**
@@ -157,5 +174,23 @@ async function fileExists(filepath: string): Promise<boolean> {
     return true
   } catch (e) {
     return false
+  }
+}
+
+async function* walk(dir: string): AsyncGenerator<string> {
+  if (isBrowser) {
+    return
+  }
+
+  const files = await fs.promises.readdir(dir)
+  for (const file of files) {
+    const stat = await fs.promises.stat(path.join(dir, file))
+    if (stat.isDirectory()) {
+      for await (const filename of walk(path.join(dir, file))) {
+        yield filename
+      }
+    } else {
+      yield path.join(dir, file)
+    }
   }
 }

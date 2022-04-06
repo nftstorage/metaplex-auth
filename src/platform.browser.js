@@ -12,6 +12,9 @@ const dummyFS = {
     stat() {
       throw new Error('not implemented in browser')
     },
+    readdir() {
+      throw new Error('not implemented in browser')
+    },
   },
 }
 
