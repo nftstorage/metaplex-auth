@@ -7,9 +7,38 @@ import {
   SolanaCluster,
 } from './auth.js'
 import { CarReader, NFTStorage } from 'nft.storage'
-import { PackagedNFT, loadNFTFromFilesystem } from './nft/index.js'
+import {
+  PackagedNFT,
+  loadNFTFromFilesystem,
+  loadAllNFTsFromDirectory,
+  NFTBundle,
+} from './nft/index.js'
 import { isBrowser } from './utils.js'
 import type { CID } from 'multiformats'
+import type { BlockDecoder } from 'multiformats/block'
+
+/**
+ * Options to pass through to NFTStorage.storeCar.
+ */
+interface CarStorerOptions {
+  /**
+   * Callback called after each chunk of data has been uploaded. By default,
+   * data is split into chunks of around 10MB. It is passed the actual chunk
+   * size in bytes.
+   */
+  onStoredChunk?: (size: number) => void
+  /**
+   * Maximum times to retry a failed upload. Default: 5
+   */
+  maxRetries?: number
+  /**
+   * Additional IPLD block decoders. Used to interpret the data in the CAR
+   * file and split it into multiple chunks. Note these are only required if
+   * the CAR file was not encoded using the default encoders: `dag-pb`,
+   * `dag-cbor` and `raw`.
+   */
+  decoders?: BlockDecoder<any, any>[]
+}
 
 const DEFAULT_ENDPOINT = new URL('https://api.nft.storage')
 
@@ -181,9 +210,15 @@ export class NFTStorageMetaplexor {
    * @param context information required to authenticate uploads
    * @param cid the root CID of the CAR.
    * @param car a CarReader that supplies CAR data. Must have a single root CID that matches the `cid` param.
+   * @param opts options to pass through to NFTStorage.storeCar
    * @returns a Promise that resolves to the uploaded CID, as a CIDv1 string.
    */
-  static async storeCar(context: ServiceContext, cid: CID, car: CarReader) {
+  static async storeCar(
+    context: ServiceContext,
+    cid: CID,
+    car: CarReader,
+    opts?: CarStorerOptions
+  ) {
     this.init()
     const { auth } = context
     const baseEndpoint = context.endpoint || DEFAULT_ENDPOINT
@@ -193,7 +228,7 @@ export class NFTStorageMetaplexor {
     // `/metaplex/` prefix here.
     const endpoint = new URL('/metaplex/', baseEndpoint)
     const token = await makeMetaplexUploadToken(auth, cid.toString())
-    return NFTStorage.storeCar({ endpoint, token }, car)
+    return NFTStorage.storeCar({ endpoint, token }, car, opts)
   }
 
   /**
@@ -208,23 +243,27 @@ export class NFTStorageMetaplexor {
    *
    * @param context information required to authenticate uploads
    * @param nft a {@link PackagedNFT} object containing NFT assets and metadata
+   * @param opts options to pass through to NFTStorage.storeCar
    * @returns a {@link StoreNFTResult} object containing the CIDs and URLs for the stored NFT
    */
   static async storePreparedNFT(
     context: ServiceContext,
-    nft: PackagedNFT
+    nft: PackagedNFT,
+    opts?: CarStorerOptions
   ): Promise<StoreNFTResult> {
     this.init()
 
     const metadataRootCID = await this.storeCar(
       context,
       nft.encodedMetadata.cid,
-      nft.encodedMetadata.car
+      nft.encodedMetadata.car,
+      opts
     )
     const assetRootCID = await this.storeCar(
       context,
       nft.encodedAssets.cid,
-      nft.encodedAssets.car
+      nft.encodedAssets.car,
+      opts
     )
     const { metadataGatewayURL, metadataURI } = nft
 
@@ -246,19 +285,79 @@ export class NFTStorageMetaplexor {
    * @param context information required to authenticate uploads
    * @param metadataFilePath path to metadata.json file
    * @param imageFilePath optional path to image file. If not provided, the image will be located using the heuristics described in {@link loadNFTFromFilesystem}.
+   * @param opts
+   * @param opts.validateSchema if true, validate the metadata against a JSON schema before processing. off by default
+   * @param opts.gatewayHost the hostname of an IPFS HTTP gateway to use in metadata links. Defaults to "nftstorage.link" if not set.
+   * @param opts.storeCarOptions options to pass through to NFTStorage.storeCar
    * @returns a {@link StoreNFTResult} object containing the CIDs and URLs for the stored NFT
    */
   static async storeNFTFromFilesystem(
     context: ServiceContext,
     metadataFilePath: string,
-    imageFilePath?: string
+    imageFilePath?: string,
+    opts: {
+      gatewayHost?: string
+      validateSchema?: boolean
+      storeCarOptions?: CarStorerOptions
+    } = {}
   ): Promise<StoreNFTResult> {
     if (isBrowser) {
       throw new Error(`storeNFTFromFilesystem is only available on node.js`)
     }
 
-    const nft = await loadNFTFromFilesystem(metadataFilePath, imageFilePath)
-    return this.storePreparedNFT(context, nft)
+    const nft = await loadNFTFromFilesystem(
+      metadataFilePath,
+      imageFilePath,
+      opts
+    )
+    return this.storePreparedNFT(context, nft, opts.storeCarOptions)
+  }
+
+  /**
+   * Searches the given `directoryPath` for .json files, which are assumed to be metadata conforming to the
+   * Metaplex metadata standard. All discovered metadata files are loaded using {@link loadNFTFromFilesystem}
+   * and bundled into a single CAR for upload using the {@link NFTBundle} helper class.
+   *
+   * @param context information required to authenticate uploads
+   * @param directoryPath path to a directory containing NFT metadata and assets
+   * @param opts
+   * @param opts.onNFTLoaded callback invoked when an NFT is loaded from disk and added to the bundle, but before anything has been uploaded. For upload progress, set storeCarOptions.onStoredChunk.
+   * @param opts.validateSchema if true, validate the metadata against a JSON schema before processing. off by default
+   * @param opts.gatewayHost the hostname of an IPFS HTTP gateway to use in metadata links. Defaults to "nftstorage.link" if not set.
+   * @param opts.storeCarOptions options to pass through to NFTStorage.storeCar
+   * @returns an object containing a "manifest" with the CIDs for each NFT's metadata and asset directories.
+   */
+  static async storeAllNFTsInDirectory(
+    context: ServiceContext,
+    directoryPath: string,
+    opts: {
+      gatewayHost?: string
+      validateSchema?: boolean
+      onNFTLoaded?: (nft: PackagedNFT) => void
+      storeCarOptions?: CarStorerOptions
+    } = {}
+  ) {
+    if (isBrowser) {
+      throw new Error(`storeAllNFTsInDirectory is only available on node.js`)
+    }
+
+    const bundle = new NFTBundle()
+    for await (const nft of bundle.addAllNFTsFromDirectory(
+      directoryPath,
+      opts
+    )) {
+      if (opts.onNFTLoaded) {
+        opts.onNFTLoaded(nft)
+      }
+    }
+
+    const { cid, car } = await bundle.asCAR()
+    await this.storeCar(context, cid, car, opts.storeCarOptions)
+
+    return {
+      bundleCID: cid,
+      manifest: bundle.manifest(),
+    }
   }
 
   // -- instance methods are just "sugar" around the static methods, using `this` as the ServiceContext parameter

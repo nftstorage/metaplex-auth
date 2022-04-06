@@ -48,9 +48,14 @@ export class NFTBundle {
 
   async addNFTFromFileSystem(
     metadataFilePath: string,
-    imageFilePath?: string
+    imageFilePath?: string,
+    opts: {
+      validateSchema?: boolean
+      gatewayHost?: string
+    } = {}
   ): Promise<PackagedNFT> {
     const nft = await loadNFTFromFilesystem(metadataFilePath, imageFilePath, {
+      ...opts,
       blockstore: this._blockstore,
     })
     this._addManifestEntry(nft)
@@ -58,9 +63,14 @@ export class NFTBundle {
   }
 
   async *addAllNFTsFromDirectory(
-    directoryPath: string
+    directoryPath: string,
+    opts: {
+      validateSchema?: boolean
+      gatewayHost?: string
+    } = {}
   ): AsyncGenerator<PackagedNFT> {
     for await (const nft of loadAllNFTsFromDirectory(directoryPath, {
+      ...opts,
       blockstore: this._blockstore,
     })) {
       this._addManifestEntry(nft)
