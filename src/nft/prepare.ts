@@ -55,6 +55,7 @@ export interface PackagedNFT {
  * @param [opts]
  * @param opts.additionalAssetFiles any additional asset files (animations, higher resolution variants, etc)
  * @param opts.blockstore blockstore to use when importing data. if not provided, a temporary blockstore will be created
+ * @param opts.validateSchema if true, validate the metadata against a JSON schema before processing. off by default
  * @returns
  */
 export async function prepareMetaplexNFT(
@@ -63,9 +64,13 @@ export async function prepareMetaplexNFT(
   opts: {
     additionalAssetFiles?: File[]
     blockstore?: BlockstoreI
+    validateSchema?: boolean
   } = {}
 ): Promise<PackagedNFT> {
-  const validated = ensureValidMetadata(metadata)
+  const metaplexMetadata = opts.validateSchema
+    ? ensureValidMetadata(metadata)
+    : (metadata as unknown as MetaplexMetadata)
+
   const additionalAssetFiles = opts.additionalAssetFiles || []
   const blockstore = opts.blockstore || new Blockstore()
   const assetFiles = [imageFile, ...additionalAssetFiles]
@@ -77,7 +82,7 @@ export async function prepareMetaplexNFT(
   const additionalFilenames = additionalAssetFiles.map((f) => f.name)
 
   const linkedMetadata = replaceFileRefsWithIPFSLinks(
-    validated,
+    metaplexMetadata,
     imageFilename,
     additionalFilenames,
     encodedAssets.cid.toString()
@@ -116,11 +121,15 @@ function replaceFileRefsWithIPFSLinks(
 ): MetaplexMetadata {
   const imageGatewayURL = makeGatewayURL(assetRootCID, imageFilename)
 
+  // since we may have skipped schema validation, we need to make sure properties.files exists
+  const properties = metadata.properties || {}
+  const originalFiles = properties.files || []
+
   // For each entry in properties.files, we check to see if the `uri` field matches the filename
   // of any uploaded files. If so, we add two entries to the output `properties.files` array -
   // one with a gateway URL with `cdn = true`, and one `ipfs://` uri with `cdn = false`.
   // If the uri does not match the filename of any uploaded files, it is included as is.
-  const files: FileDescription[] = metadata.properties.files.flatMap((f) => {
+  const files: FileDescription[] = originalFiles.flatMap((f) => {
     if (f.uri === imageFilename || additionalFilenames.includes(f.uri)) {
       return [
         {
