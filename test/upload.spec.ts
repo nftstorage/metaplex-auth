@@ -116,7 +116,7 @@ describe('NFTStorageMetaplexor', () => {
       expect(result.assetRootCID).to.not.be.empty
       expect(result.metadataRootCID).to.not.be.empty
       expect(result.metadata['image']).to.eq(
-        `https://dweb.link/ipfs/${result.assetRootCID}/token.png`
+        `https://nftstorage.link/ipfs/${result.assetRootCID}/token.png`
       )
     })
   })

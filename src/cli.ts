@@ -86,7 +86,7 @@ async function main() {
     (f) => `ipfs://${rootCID}/${encodeURIComponent(f)}`
   )
   const gatewayURLs = filenames.map(
-    (f) => `https://${rootCID}.ipfs.dweb.link/${f}`
+    (f) => `https://${rootCID}.ipfs.nftstorage.link/${f}`
   )
 
   console.log('-------- IPFS URIs: --------')

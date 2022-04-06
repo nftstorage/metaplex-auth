@@ -17,7 +17,7 @@ describe('loadNFTFromFilesystem', () => {
     )
     const nft = await loadNFTFromFilesystem(jsonPath)
     const expectedURI =
-      'ipfs://bafybeiegbfxiiz26tqzrcl4xyhf42vxrseeouubiwhmmlgrb4t2rbdiruu/metadata.json'
+      'ipfs://bafybeiha2he3pyzhlvr444ihcwu4vglcatatqr7li37rwly76m5j7wizde/metadata.json'
     expect(nft.metadataURI).to.equal(expectedURI)
   })
 
@@ -31,7 +31,7 @@ describe('loadNFTFromFilesystem', () => {
     )
     const nft = await loadNFTFromFilesystem(jsonPath)
     const expectedURI =
-      'ipfs://bafybeiegbfxiiz26tqzrcl4xyhf42vxrseeouubiwhmmlgrb4t2rbdiruu/metadata.json'
+      'ipfs://bafybeiha2he3pyzhlvr444ihcwu4vglcatatqr7li37rwly76m5j7wizde/metadata.json'
     expect(nft.metadataURI).to.equal(expectedURI)
   })
 
@@ -52,7 +52,7 @@ describe('loadNFTFromFilesystem', () => {
     )
     const nft = await loadNFTFromFilesystem(jsonPath, imagePath)
     const expectedURI =
-      'ipfs://bafybeiegbfxiiz26tqzrcl4xyhf42vxrseeouubiwhmmlgrb4t2rbdiruu/metadata.json'
+      'ipfs://bafybeiha2he3pyzhlvr444ihcwu4vglcatatqr7li37rwly76m5j7wizde/metadata.json'
     expect(nft.metadataURI).to.equal(expectedURI)
   })
 })

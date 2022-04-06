@@ -54,6 +54,7 @@ export interface PackagedNFT {
  * @param imageFile a File object containing image data.
  * @param [opts]
  * @param opts.additionalAssetFiles any additional asset files (animations, higher resolution variants, etc)
+ * @param opts.blockstore blockstore to use when importing data. if not provided, a temporary blockstore will be created
  * @returns
  */
 export async function prepareMetaplexNFT(

@@ -1,4 +1,4 @@
-const GATEWAY_HOST = 'https://dweb.link'
+const GATEWAY_HOST = 'https://nftstorage.link'
 
 export const isBrowser =
   typeof window !== 'undefined' && typeof window.document !== 'undefined'
