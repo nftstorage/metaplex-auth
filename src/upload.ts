@@ -374,10 +374,11 @@ export class NFTStorageMetaplexor {
    *
    * @param cid the root CID of the CAR.
    * @param car a CarReader that supplies CAR data. Must have a single root CID that matches the `cid` param.
+   * @param opts options to pass through to NFTStorage.storeCar
    * @returns a Promise that resolves to the uploaded CID, as a CIDv1 string.
    */
-  async storeCar(cid: CID, car: CarReader) {
-    return NFTStorageMetaplexor.storeCar(this, cid, car)
+  async storeCar(cid: CID, car: CarReader, opts?: CarStorerOptions) {
+    return NFTStorageMetaplexor.storeCar(this, cid, car, opts)
   }
 
   /**
@@ -405,10 +406,14 @@ export class NFTStorageMetaplexor {
    * File objects, or {@link loadNFTFromFilesystem} for loading from disk (node.js only).
    *
    * @param nft a {@link PackagedNFT} object containing NFT assets and metadata
+   * @param opts options to pass through to NFTStorage.storeCar
    * @returns a {@link StoreNFTResult} object containing the CIDs and URLs for the stored NFT
    */
-  async storePreparedNFT(nft: PackagedNFT): Promise<StoreNFTResult> {
-    return NFTStorageMetaplexor.storePreparedNFT(this, nft)
+  async storePreparedNFT(
+    nft: PackagedNFT,
+    opts?: CarStorerOptions
+  ): Promise<StoreNFTResult> {
+    return NFTStorageMetaplexor.storePreparedNFT(this, nft, opts)
   }
 
   /**
@@ -419,16 +424,26 @@ export class NFTStorageMetaplexor {
    *
    * @param metadataFilePath path to metadata.json file
    * @param imageFilePath optional path to image file. If not provided, the image will be located using the heuristics described in {@link loadNFTFromFilesystem}.
+   * @param opts
+   * @param opts.validateSchema if true, validate the metadata against a JSON schema before processing. off by default
+   * @param opts.gatewayHost the hostname of an IPFS HTTP gateway to use in metadata links. Defaults to "nftstorage.link" if not set.
+   * @param opts.storeCarOptions options to pass through to NFTStorage.storeCar
    * @returns a {@link StoreNFTResult} object containing the CIDs and URLs for the stored NFT
    */
   async storeNFTFromFilesystem(
     metadataFilePath: string,
-    imageFilePath?: string
+    imageFilePath?: string,
+    opts: {
+      gatewayHost?: string
+      validateSchema?: boolean
+      storeCarOptions?: CarStorerOptions
+    } = {}
   ): Promise<StoreNFTResult> {
     return NFTStorageMetaplexor.storeNFTFromFilesystem(
       this,
       metadataFilePath,
-      imageFilePath
+      imageFilePath,
+      opts
     )
   }
 

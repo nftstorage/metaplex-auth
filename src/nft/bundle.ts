@@ -97,6 +97,14 @@ export class NFTBundle {
     return Block.encode({ value: rootDAG, codec: dagCbor, hasher: sha256 })
   }
 
+  async getRawSize(): Promise<number> {
+    let size = 0
+    for await (const block of this._blockstore.blocks()) {
+      size += block.bytes.length
+    }
+    return size
+  }
+
   async asCAR(): Promise<EncodedCar> {
     const rootBlock = await this.manifestBlock()
     await this._blockstore.put(rootBlock.cid, rootBlock.bytes)
