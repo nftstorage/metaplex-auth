@@ -88,7 +88,8 @@ export async function prepareMetaplexNFT(
     metaplexMetadata,
     imageFilename,
     additionalFilenames,
-    encodedAssets.cid.toString()
+    encodedAssets.cid.toString(),
+    opts.gatewayHost
   )
   const metadataFile = new File(
     [JSON.stringify(linkedMetadata)],
@@ -99,7 +100,8 @@ export async function prepareMetaplexNFT(
   })
   const metadataGatewayURL = makeGatewayURL(
     encodedMetadata.cid.toString(),
-    'metadata.json'
+    'metadata.json',
+    opts.gatewayHost
   )
   const metadataURI = makeIPFSURI(
     encodedMetadata.cid.toString(),
@@ -142,7 +144,7 @@ function replaceFileRefsWithIPFSLinks(
       return [
         {
           ...f,
-          uri: makeGatewayURL(assetRootCID, f.uri),
+          uri: makeGatewayURL(assetRootCID, f.uri, gatewayHost),
           cdn: true,
         },
         {
