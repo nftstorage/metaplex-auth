@@ -1,15 +1,20 @@
 import { describe, it } from 'mocha'
-import { expect } from 'chai'
+import chai, { expect } from 'chai'
+import chaiAsPromised from 'chai-as-promised'
 
 import { NFTBundle } from '../src/nft/index.js'
 import { File } from '../src/platform.js'
+
 import * as Block from 'multiformats/block'
 import { sha256 } from 'multiformats/hashes/sha2'
-import * as dagCbor from '@ipld/dag-cbor'
+import * as dagPb from '@ipld/dag-pb'
 
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { CID } from 'multiformats/cid'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+chai.use(chaiAsPromised)
 
 describe('NFTBundle', () => {
   describe('addNFT', () => {
@@ -17,11 +22,24 @@ describe('NFTBundle', () => {
       const { image, metadata } = makeRandomNFT()
 
       const bundle = new NFTBundle()
-      const nft = await bundle.addNFT(metadata, image)
+      const nft = await bundle.addNFT('an-id', metadata, image)
       const manifest = bundle.manifest()
-      expect(manifest.nfts).to.have.length(1)
-      expect(manifest.nfts[0]?.assets).to.eq(nft.encodedAssets.cid)
-      expect(manifest.nfts[0]?.metadata).to.eq(nft.encodedMetadata.cid)
+      expect(manifest).to.haveOwnProperty('an-id')
+      expect(manifest['an-id']?.encodedAssets.cid).to.eq(nft.encodedAssets.cid)
+      expect(manifest['an-id']?.encodedMetadata.cid).to.eq(
+        nft.encodedMetadata.cid
+      )
+    })
+
+    it('fails to add entries with duplicate ids', async () => {
+      const nft1 = makeRandomNFT()
+      const nft2 = makeRandomNFT()
+
+      const bundle = new NFTBundle()
+      await bundle.addNFT('an-id', nft1.metadata, nft1.image)
+      expect(
+        bundle.addNFT('an-id', nft2.metadata, nft2.image)
+      ).to.be.rejectedWith(/.*duplicate.*/)
     })
   })
 
@@ -36,50 +54,39 @@ describe('NFTBundle', () => {
       )
 
       const bundle = new NFTBundle()
+      const nft = await bundle.addNFTFromFileSystem(jsonPath, undefined, {
+        id: 'an-id',
+      })
+      const manifest = bundle.manifest()
+      expect(manifest).to.haveOwnProperty('an-id')
+      expect(manifest['an-id']?.encodedAssets.cid).to.eq(nft.encodedAssets.cid)
+      expect(manifest['an-id']?.encodedMetadata.cid).to.eq(
+        nft.encodedMetadata.cid
+      )
+    })
+
+    it('assigns an id based on metadata filename if none is given', async () => {
+      const jsonPath = path.join(
+        __dirname,
+        'fixtures',
+        'nfts',
+        '01-simple-example',
+        'token.json'
+      )
+
+      const bundle = new NFTBundle()
       const nft = await bundle.addNFTFromFileSystem(jsonPath)
       const manifest = bundle.manifest()
-      expect(manifest.nfts).to.have.length(1)
-      expect(manifest.nfts[0]?.assets).to.eq(nft.encodedAssets.cid)
-      expect(manifest.nfts[0]?.metadata).to.eq(nft.encodedMetadata.cid)
+      expect(manifest).to.haveOwnProperty('token')
+      expect(manifest['token']?.encodedAssets.cid).to.eq(nft.encodedAssets.cid)
+      expect(manifest['token']?.encodedMetadata.cid).to.eq(
+        nft.encodedMetadata.cid
+      )
     })
   })
 
-  describe('addAllNFTsFromDirectory', () => {
-    it('adds all NFTs from a single directory', async () => {
-      const dirPath = path.join(
-        __dirname,
-        'fixtures',
-        'nfts',
-        '02-load-directory-flat'
-      )
-      const bundle = new NFTBundle()
-      for await (const nft of bundle.addAllNFTsFromDirectory(dirPath)) {
-        expect(nft.metadataURI).to.include('ipfs://')
-        expect(nft.encodedAssets.cid).to.not.be.null
-      }
-      const manifest = bundle.manifest()
-      expect(manifest.nfts).to.have.length(4)
-    })
-
-    it('adds all NFTs from a nested directories', async () => {
-      const dirPath = path.join(
-        __dirname,
-        'fixtures',
-        'nfts',
-        '03-load-directory-nested'
-      )
-      const bundle = new NFTBundle()
-      for await (const nft of bundle.addAllNFTsFromDirectory(dirPath)) {
-        expect(nft.metadataURI).to.include('ipfs://')
-        expect(nft.encodedAssets.cid).to.not.be.null
-      }
-      const manifest = bundle.manifest()
-      expect(manifest.nfts).to.have.length(4)
-    })
-  })
-
-  describe('asCAR', () => {
-    it('contains all of the added NFTs', async () => {
+  describe('makeRootBlock', () => {
+    it('contains links to all of the added NFTs', async () => {
       const bundle = new NFTBundle()
       const n = 10
       let metadataCIDs = []
@@ -87,35 +94,32 @@ describe('NFTBundle', () => {
 
       for (let i = 0; i < n; i++) {
         const { metadata, image } = makeRandomNFT()
-        const nft = await bundle.addNFT(metadata, image)
+        const nft = await bundle.addNFT(i.toString(), metadata, image)
         metadataCIDs.push(nft.encodedMetadata.cid)
         assetCIDs.push(nft.encodedAssets.cid)
       }
 
-      const { car, cid: carRootCid } = await bundle.asCAR()
+      expectRootBlockToHaveCIDs(bundle, metadataCIDs, assetCIDs)
+    })
+  })
 
-      // check the root block - it should be a dag-cbor "manifest" object
-      // that links to all of the nfts.
-      const roots = await car.getRoots()
-      expect(roots).to.have.length(1)
-      expect(roots[0]).to.eq(carRootCid)
-      const rootBlock = await car.get(roots[0]!)
-      expect(rootBlock).to.not.be.undefined
+  describe('asCAR', () => {
+    it('contains all blocks from each included NFT', async () => {
+      const bundle = new NFTBundle()
+      const n = 10
+      let nfts = []
 
-      // car.get returns a "raw" block of bytes. Block.decode will decode the dag-cbor object inside
-      const ipldBlock = await Block.decode({
-        bytes: rootBlock!.bytes,
-        codec: dagCbor,
-        hasher: sha256,
-      })
-      // ipldBlock.value should be equal to the bundle manifest object
-      expect(ipldBlock.value).to.not.be.null
-      expect(ipldBlock.value).to.haveOwnProperty('nfts')
-      expect(ipldBlock.value).to.deep.equal(bundle.manifest())
+      for (let i = 0; i < n; i++) {
+        const { metadata, image } = makeRandomNFT()
+        const nft = await bundle.addNFT(i.toString(), metadata, image)
+        nfts.push(nft)
+      }
 
-      for (const cid of [...metadataCIDs, ...assetCIDs]) {
-        const block = await car.get(cid)
-        expect(block).to.not.be.undefined
+      const { car } = await bundle.asCAR()
+      for (const nft of nfts) {
+        for await (const block of nft.blockstore.blocks()) {
+          expect(car.has(block.cid)).to.eventually.be.true
+        }
       }
     })
   })
@@ -138,4 +142,31 @@ function makeRandomNFT() {
     },
   }
   return { image, metadata }
+}
+
+async function expectRootBlockToHaveCIDs(
+  bundle: NFTBundle,
+  metadataCIDs: CID[],
+  assetCIDs: CID[]
+) {
+  const rootBlock = await bundle.makeRootBlock()
+  const links = rootBlock.value.Links
+  expect(links).to.have.length(metadataCIDs.length)
+
+  // each link in the root block goes to a directory object that links to the
+  // assets and metadata for each nft
+  for (const link of links) {
+    const bytes = await bundle.getRawBlock(link.Hash)
+    expect(bytes).to.not.be.empty
+
+    const block = await Block.decode({ bytes, codec: dagPb, hasher: sha256 })
+    const metadataLink = block.value.Links.find((l) => l.Name === 'metadata')
+    const assetsLink = block.value.Links.find((l) => l.Name === 'assets')
+    expect(metadataLink).to.not.be.undefined
+    expect(assetsLink).to.not.be.undefined
+
+    expect(metadataCIDs.some((cid) => cid.equals(metadataLink?.Hash))).to.be
+      .true
+    expect(assetCIDs.some((cid) => cid.equals(assetsLink?.Hash))).to.be.true
+  }
 }
