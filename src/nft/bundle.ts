@@ -61,6 +61,17 @@ export class NFTBundle {
     this._nfts = {}
   }
 
+  /**
+   * Adds a {@link PackagedNFT} to the bundle.
+   *
+   * @param id an identifier for the NFT that will be used to create links from the bundle root directory object to the NFT data. Must be unique within the bundle.
+   * @param metadata a JS object containing Metaplex NFT metadata
+   * @param imageFile a File object containing image data for the main NFT image
+   * @param opts
+   * @param opts.validateSchema if true, validate the metadata using a JSON schema before adding. off by default.
+   * @param opts.gatewayHost override the default HTTP gateway to use in metadata links. Must include scheme, e.g. "https://dweb.link" instead of just "dweb.link". Default is "https://nftstorage.link".
+   * @returns a Promise that resolves to the input `PackagedNFT` object on success.
+   */
   async addNFT(
     id: string,
     metadata: Record<string, any>,
@@ -81,6 +92,20 @@ export class NFTBundle {
     return nft
   }
 
+  /**
+   * Loads an NFT from the local filesystem (node.js only) using {@link loadNFTFromFilesystem}.
+   *
+   * Note: if opts.id is not set, the basename of the metadata json file will be used as the id,
+   * which will only work if each NFT metadata file has a unique name.
+   *
+   * @param metadataFilePath path to metadata json file
+   * @param imageFilePath optional path to image file. If not given, will be inferred using the logic in {@link loadNFTFromFilesystem}.
+   * @param opts
+   * @param opts.id an identifier for the NFT that will be used to create links from the bundle root directory object to the NFT data. Must be unique within the bundle. If not given, the name of the metadata json file (without '.json' extension) will be used.
+   * @param opts.validateSchema if true, validate the metadata using a JSON schema before adding. off by default.
+   * @param opts.gatewayHost override the default HTTP gateway to use in metadata links. Must include scheme, e.g. "https://dweb.link" instead of just "dweb.link". Default is "https://nftstorage.link".
+   * @returns a Promise that resolves to a {@link PackagedNFT} containing the NFT data on success.
+   */
   async addNFTFromFileSystem(
     metadataFilePath: string,
     imageFilePath?: string,
@@ -122,11 +147,18 @@ export class NFTBundle {
     this._nfts[id] = nft
   }
 
+  /**
+   * @returns an object that links to each added NFT. Object keys are the `id` given when the NFT was added. Values are {@link PackagedNFT} objects.
+   */
   manifest(): Record<string, PackagedNFT> {
     // make a copy of the manifest object, in case the caller wants to mutate
     return { ...this._nfts }
   }
 
+  /**
+   * Creates a root UnixFS directory object that links to each NFT and encodes it as an IPLD block.
+   * @returns a Promise that resolves to an IPLD block of dab-pb / unixfs data.
+   */
   async makeRootBlock(): Promise<Block.Block<dagPb.PBNode>> {
     let links: dagPb.PBLink[] = []
     for (const [id, nft] of Object.entries(this._nfts)) {
@@ -140,6 +172,9 @@ export class NFTBundle {
     return makeDirectoryBlock(links)
   }
 
+  /**
+   * @returns the total size of all blocks in our blockstore. Will be slightly smaller than the size of the final CAR, due to the CAR header.
+   */
   async getRawSize(): Promise<number> {
     let size = 0
     for await (const block of this._blockstore.blocks()) {
@@ -153,6 +188,12 @@ export class NFTBundle {
     return this._blockstore.get(cid)
   }
 
+  /**
+   * "Finalizes" the bundle by creating a root block linking to all the NFTs in the bundle and
+   * generating a CAR containing all added NFT data.
+   *
+   * @returns a Promise that resolves to an {@link EncodedCar}, which contains a {@link CarReader} and the root object's CID.
+   */
   async asCAR(): Promise<EncodedCar> {
     const rootBlock = await this.makeRootBlock()
     await this._blockstore.put(rootBlock.cid, rootBlock.bytes)
@@ -167,7 +208,7 @@ export class NFTBundle {
  * Makes a dag-pb / unixfs directory that links to the `assets` and `metadata` directories
  * in the PackagedNFT.
  * @param nft
- * @returns
+ * @returns a Promise that resolves to an encoded IPLD block of dag-pb/unixfs data.
  */
 async function wrapperDirForNFT(
   nft: PackagedNFT
@@ -194,6 +235,11 @@ async function wrapperDirForNFT(
   return makeDirectoryBlock([assetsLink, metadataLink])
 }
 
+/**
+ * Given an array of dag-pb links, return an encoded IPLD block containing a unixfs directory object.
+ * @param links an array of PBLink objects to the directory contents
+ * @returns a Promise that resolves to an encoded IPLD block containing a directory entry
+ */
 async function makeDirectoryBlock(
   links: dagPb.PBLink[]
 ): Promise<Block.Block<dagPb.PBNode>> {
