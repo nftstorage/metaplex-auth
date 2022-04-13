@@ -9,14 +9,12 @@ import {
 import { NFTStorageMetaplexor } from './upload.js'
 import { getFilesFromPath } from 'files-from-path'
 import { version as projectVersion } from '../package.json'
-import { makeGatewayURL } from './utils.js'
 
 interface IArgs {
   keyfile: string
   cluster: string
   endpoint: string
   testCID?: string
-  bundle: boolean
   files?: string[]
 }
 
@@ -42,12 +40,6 @@ const args = parse<IArgs>({
     type: String,
     optional: true,
     description: `CID to create a test token for. If present, upload will be skipped and token will be printed to the console.`,
-  },
-  bundle: {
-    type: Boolean,
-    description:
-      'if true, the input file paths will be treated as directories full of metaplex nfts, and will be uploaded as a single CAR bundle',
-    defaultValue: false,
   },
   files: { type: String, optional: true, multiple: true, defaultOption: true },
 })
@@ -82,33 +74,6 @@ async function storeFiles(client: NFTStorageMetaplexor, paths: string[]) {
   console.log(gatewayURLs.join('\n'))
 }
 
-async function storeNFTBundle(client: NFTStorageMetaplexor, paths: string[]) {
-  for (const dirPath of paths) {
-    console.log('storing NFTs from directory ' + dirPath)
-    const { bundleCID, manifest } = await client.storeAllNFTsInDirectory(
-      dirPath,
-      {
-        onNFTLoaded: (nft) => {
-          console.log('loaded NFT into bundle: ', nft.metadata.name)
-        },
-        storeCarOptions: {
-          onStoredChunk: (size) => {
-            console.log(`uploaded ${size} bytes to nft.storage`)
-          },
-        },
-      }
-    )
-
-    console.log('bundle root CID:', bundleCID)
-
-    console.log('NFT gateway URLs:')
-    for (const nft of manifest.nfts) {
-      const url = makeGatewayURL(nft.metadata.toString(), 'metadata.json')
-      console.log(url)
-    }
-  }
-}
-
 async function main() {
   const auth = await makeAuthContext(
     args.keyfile,
@@ -131,11 +96,7 @@ async function main() {
     endpoint: new URL(args.endpoint),
   })
 
-  if (args.bundle) {
-    await storeNFTBundle(client, args.files)
-  } else {
-    await storeFiles(client, args.files)
-  }
+  await storeFiles(client, args.files)
 }
 
 async function loadKey(keyfilePath: string): Promise<Uint8Array> {
