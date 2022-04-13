@@ -12,6 +12,7 @@ export function makeGatewayURL(
   if (path) {
     pathPrefix += '/'
   }
+  host = host || DEFAULT_GATEWAY_HOST
   const base = new URL(pathPrefix, host)
   const u = new URL(path, base)
   return u.toString()
