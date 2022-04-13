@@ -39,7 +39,27 @@ describe('NFTBundle', () => {
       await bundle.addNFT('an-id', nft1.metadata, nft1.image)
       expect(
         bundle.addNFT('an-id', nft2.metadata, nft2.image)
-      ).to.be.rejectedWith(/.*duplicate.*/)
+      ).to.be.rejectedWith('duplicate')
+    })
+
+    it('fails to add more than MAX_ENTRIES', async () => {
+      const bundle = new NFTBundle()
+      const oldMax = NFTBundle.MAX_ENTRIES
+      NFTBundle.MAX_ENTRIES = 5
+
+      try {
+        for (let i = 0; i < NFTBundle.MAX_ENTRIES; i++) {
+          const { metadata, image } = makeRandomNFT()
+          await bundle.addNFT(i.toString(), metadata, image)
+        }
+
+        const { metadata, image } = makeRandomNFT()
+        expect(bundle.addNFT('too-many', metadata, image)).to.be.rejectedWith(
+          NFTBundle.MAX_ENTRIES.toString()
+        )
+      } finally {
+        NFTBundle.MAX_ENTRIES = oldMax
+      }
     })
   })
 
@@ -106,7 +126,7 @@ describe('NFTBundle', () => {
   describe('asCAR', () => {
     it('contains all blocks from each included NFT', async () => {
       const bundle = new NFTBundle()
-      const n = 10
+      const n = 3
       let nfts = []
 
       for (let i = 0; i < n; i++) {
