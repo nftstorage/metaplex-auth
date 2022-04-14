@@ -1,3 +1,7 @@
+# 2022-04-14 - v1.2.0
+
+- [Add ability to bundle many NFTs into one CAR for upload](https://github.com/nftstorage/metaplex-auth/pull/39)
+
 # 2022-02-09 - v1.1.0
 
 - [Add `storeBlob` methods](https://github.com/nftstorage/metaplex-auth/pull/37)
