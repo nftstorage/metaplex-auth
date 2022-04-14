@@ -49,6 +49,31 @@ if (!CLUSTER_VALUES.includes(args.cluster)) {
   process.exit(1)
 }
 
+async function storeFiles(client: NFTStorageMetaplexor, paths: string[]) {
+  const files = await getFilesFromPath(paths)
+  console.log(`uploading ${files.length} file${files.length > 1 ? 's' : ''}...`)
+
+  // @ts-ignore - todo: figure out correct type to use for File param
+  const rootCID = await client.storeDirectory(files)
+
+  console.log('Upload complete!')
+  console.log(`Root CID: ${rootCID}`)
+
+  // strip leading / chars from filename
+  const filenames = files.map((f) => f.name.replace(new RegExp('^\\/'), ''))
+  const ipfsURIs = filenames.map(
+    (f) => `ipfs://${rootCID}/${encodeURIComponent(f)}`
+  )
+  const gatewayURLs = filenames.map(
+    (f) => `https://${rootCID}.ipfs.nftstorage.link/${f}`
+  )
+
+  console.log('-------- IPFS URIs: --------')
+  console.log(ipfsURIs.join('\n'))
+  console.log('-------- HTTP Gateway URLs: --------')
+  console.log(gatewayURLs.join('\n'))
+}
+
 async function main() {
   const auth = await makeAuthContext(
     args.keyfile,
@@ -66,33 +91,12 @@ async function main() {
     process.exit(1)
   }
 
-  const files = await getFilesFromPath(args.files)
-
   const client = new NFTStorageMetaplexor({
     auth,
     endpoint: new URL(args.endpoint),
   })
-  console.log(`uploading ${files.length} file${files.length > 1 ? 's' : ''}...`)
 
-  // @ts-ignore - todo: figure out correct type to use for File param
-  const rootCID = await client.storeDirectory(files)
-
-  console.log('Upload complete!')
-  console.log(`Root CID: ${rootCID}`)
-
-  // strip leading / chars from filename
-  const filenames = files.map((f) => f.name.replace(new RegExp('^\\/'), ''))
-  const ipfsURIs = filenames.map(
-    (f) => `ipfs://${rootCID}/${encodeURIComponent(f)}`
-  )
-  const gatewayURLs = filenames.map(
-    (f) => `https://${rootCID}.ipfs.dweb.link/${f}`
-  )
-
-  console.log('-------- IPFS URIs: --------')
-  console.log(ipfsURIs.join('\n'))
-  console.log('-------- HTTP Gateway URLs: --------')
-  console.log(gatewayURLs.join('\n'))
+  await storeFiles(client, args.files)
 }
 
 async function loadKey(keyfilePath: string): Promise<Uint8Array> {

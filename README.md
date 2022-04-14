@@ -120,7 +120,7 @@ async function uploadFiles(files) {
 
   const cid = await client.storeDirectory(files)
   console.log(
-    `Stored ${files.length} file(s). Check them out at https://${cid}.ipfs.dweb.link`
+    `Stored ${files.length} file(s). Check them out at https://${cid}.ipfs.nftstorage.link`
   )
 }
 ```
@@ -134,8 +134,8 @@ async function uploadFiles(files) {
 
   const cid = await client.storeDirectory(files)
 
-  // make HTTP gateway links using the dweb.link gateway
-  const gatewayBaseUrl = new URL(`https://${cid}.ipfs.dweb.link`)
+  // make HTTP gateway links using the nftstorage.link gateway
+  const gatewayBaseUrl = new URL(`https://${cid}.ipfs.nftstorage.link`)
   const gatewayLinks = files.map((f) => new URL(f.name, gatewayBaseUrl))
 
   // make gateway-agnostic IPFS uris:
