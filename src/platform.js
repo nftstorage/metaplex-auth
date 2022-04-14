@@ -10,3 +10,5 @@ export { _path as path }
 
 import { FsBlockStore } from 'ipfs-car/blockstore/fs'
 export { FsBlockStore as Blockstore }
+
+export { TextEncoder } from 'util'

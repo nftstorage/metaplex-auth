@@ -1,8 +1,14 @@
 const file = File
 const blob = Blob
 const _fetch = fetch
+const textEncoder = TextEncoder
 
-export { file as File, blob as Blob, _fetch as fetch }
+export {
+  file as File,
+  blob as Blob,
+  _fetch as fetch,
+  textEncoder as TextEncoder,
+}
 
 const dummyFS = {
   promises: {

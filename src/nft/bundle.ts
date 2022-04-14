@@ -5,7 +5,7 @@ import * as dagPb from '@ipld/dag-pb'
 import { UnixFS } from 'ipfs-unixfs'
 import { path } from '../platform.js'
 
-import { Blockstore } from '../platform.js'
+import { Blockstore, TextEncoder } from '../platform.js'
 import { BlockstoreCarReader } from './bs-car-reader.js'
 import { PackagedNFT, prepareMetaplexNFT } from './prepare.js'
 import { loadNFTFromFilesystem } from './load.js'
@@ -47,11 +47,22 @@ import { CID } from 'multiformats'
 export class NFTBundle {
   /** Maximum NFTs a bundle can support.
    *
-   * This is currently limited by the size of the root block, which must stay below 256kb
+   * This is currently limited by the size of the root block, which must stay below 256 kib
    * to be a valid "simple" (non-sharded) UnixFS directory object. May be increased in the
    * future by switching to sharded directories for the root object.
    */
-  static MAX_ENTRIES = 5000
+  static MAX_ENTRIES = 2200
+
+  /**
+   * Maximum byte length for each NFT id string (encoded as UTF-8).
+   *
+   * Maximum length is enforced to ensure we can fit MAX_ENTRIES in a single root block.
+   * With 64 byte ids, each link in the root block takes a max of 114 bytes, which gives
+   * us 2299 max entries to stay below 256 kib.
+   *
+   * If you change this value, make sure to recalculate and change MAX_ENTRIES to stay below the hard limit.
+   */
+  static MAX_ID_LEN = 64
 
   private _blockstore: BlockstoreI
   private _nfts: Record<string, PackagedNFT>
@@ -83,6 +94,7 @@ export class NFTBundle {
     } = {}
   ): Promise<PackagedNFT> {
     this._enforceMaxEntries()
+    this._enforceMaxIdLength(id)
 
     const nft = await prepareMetaplexNFT(metadata, imageFile, {
       ...opts,
@@ -121,6 +133,7 @@ export class NFTBundle {
     if (!id) {
       id = path.basename(metadataFilePath, '.json')
     }
+    this._enforceMaxIdLength(id)
 
     const nft = await loadNFTFromFilesystem(metadataFilePath, imageFilePath, {
       ...opts,
@@ -134,6 +147,15 @@ export class NFTBundle {
     if (Object.keys(this._nfts).length >= NFTBundle.MAX_ENTRIES) {
       throw new Error(
         `unable to add more than ${NFTBundle.MAX_ENTRIES} to a bundle.`
+      )
+    }
+  }
+
+  private _enforceMaxIdLength(id: string) {
+    const len = new TextEncoder().encode(id).byteLength
+    if (len > NFTBundle.MAX_ID_LEN) {
+      throw new Error(
+        `NFT id exceeds max length (${NFTBundle.MAX_ID_LEN} bytes): ${id}`
       )
     }
   }

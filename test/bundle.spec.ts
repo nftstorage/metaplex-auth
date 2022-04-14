@@ -9,6 +9,7 @@ import * as Block from 'multiformats/block'
 import { sha256 } from 'multiformats/hashes/sha2'
 import * as dagPb from '@ipld/dag-pb'
 
+import crypto from 'crypto'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { CID } from 'multiformats/cid'
@@ -37,9 +38,18 @@ describe('NFTBundle', () => {
 
       const bundle = new NFTBundle()
       await bundle.addNFT('an-id', nft1.metadata, nft1.image)
-      expect(
+      await expect(
         bundle.addNFT('an-id', nft2.metadata, nft2.image)
       ).to.be.rejectedWith('duplicate')
+    })
+
+    it('fails to add an entry with an id longer than MAX_ID_LEN', async () => {
+      const bundle = new NFTBundle()
+      const id = makeRandomString(NFTBundle.MAX_ID_LEN + 1)
+      const { metadata, image } = makeRandomNFT()
+      await expect(bundle.addNFT(id, metadata, image)).to.be.rejectedWith(
+        'length'
+      )
     })
 
     it('fails to add more than MAX_ENTRIES', async () => {
@@ -54,9 +64,9 @@ describe('NFTBundle', () => {
         }
 
         const { metadata, image } = makeRandomNFT()
-        expect(bundle.addNFT('too-many', metadata, image)).to.be.rejectedWith(
-          NFTBundle.MAX_ENTRIES.toString()
-        )
+        await expect(
+          bundle.addNFT('too-many', metadata, image)
+        ).to.be.rejectedWith(NFTBundle.MAX_ENTRIES.toString())
       } finally {
         NFTBundle.MAX_ENTRIES = oldMax
       }
@@ -162,6 +172,10 @@ function makeRandomNFT() {
     },
   }
   return { image, metadata }
+}
+
+function makeRandomString(size: number) {
+  return crypto.randomBytes(size).toString('hex').slice(0, size)
 }
 
 async function expectRootBlockToHaveCIDs(
