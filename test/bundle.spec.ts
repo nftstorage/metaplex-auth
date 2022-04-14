@@ -3,7 +3,7 @@ import chai, { expect } from 'chai'
 import chaiAsPromised from 'chai-as-promised'
 
 import { NFTBundle } from '../src/nft/index.js'
-import { File } from '../src/platform.js'
+import { Blockstore, File } from '../src/platform.js'
 
 import * as Block from 'multiformats/block'
 import { sha256 } from 'multiformats/hashes/sha2'
@@ -13,6 +13,7 @@ import crypto from 'crypto'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { CID } from 'multiformats/cid'
+import { BlockstoreI } from 'nft.storage'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 chai.use(chaiAsPromised)
@@ -117,7 +118,9 @@ describe('NFTBundle', () => {
 
   describe('makeRootBlock', () => {
     it('contains links to all of the added NFTs', async () => {
-      const bundle = new NFTBundle()
+      // inject a blockstore, so we can inspect it later & make assertions
+      const blockstore = new Blockstore()
+      const bundle = new NFTBundle({ blockstore })
       const n = 10
       let metadataCIDs = []
       let assetCIDs = []
@@ -129,7 +132,8 @@ describe('NFTBundle', () => {
         assetCIDs.push(nft.encodedAssets.cid)
       }
 
-      expectRootBlockToHaveCIDs(bundle, metadataCIDs, assetCIDs)
+      const rootBlock = await bundle.makeRootBlock()
+      expectRootBlockToHaveCIDs(rootBlock, blockstore, metadataCIDs, assetCIDs)
     })
   })
 
@@ -179,18 +183,18 @@ function makeRandomString(size: number) {
 }
 
 async function expectRootBlockToHaveCIDs(
-  bundle: NFTBundle,
+  rootBlock: Block.Block<dagPb.PBNode>,
+  blockstore: BlockstoreI,
   metadataCIDs: CID[],
   assetCIDs: CID[]
 ) {
-  const rootBlock = await bundle.makeRootBlock()
   const links = rootBlock.value.Links
   expect(links).to.have.length(metadataCIDs.length)
 
   // each link in the root block goes to a directory object that links to the
   // assets and metadata for each nft
   for (const link of links) {
-    const bytes = await bundle.getRawBlock(link.Hash)
+    const bytes = await blockstore.get(link.Hash)
     expect(bytes).to.not.be.empty
 
     const block = await Block.decode({ bytes, codec: dagPb, hasher: sha256 })

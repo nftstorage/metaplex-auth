@@ -10,7 +10,6 @@ import { BlockstoreCarReader } from './bs-car-reader.js'
 import { PackagedNFT, prepareMetaplexNFT } from './prepare.js'
 import { loadNFTFromFilesystem } from './load.js'
 import type { EncodedCar } from './prepare.js'
-import { CID } from 'multiformats'
 
 /**
  * An NFTBundle is a collection of Metaplex NFTs that can be packaged into a single CAR for uploading to NFT.Storage.
@@ -67,8 +66,17 @@ export class NFTBundle {
   private _blockstore: BlockstoreI
   private _nfts: Record<string, PackagedNFT>
 
-  constructor() {
-    this._blockstore = new Blockstore()
+  /**
+   *
+   * @param opts
+   * @param opts.blockstore use the given Blockstore instance (useful for testing).
+   */
+  constructor(
+    opts: {
+      blockstore?: BlockstoreI
+    } = {}
+  ) {
+    this._blockstore = opts.blockstore || new Blockstore()
     this._nfts = {}
   }
 
@@ -203,11 +211,6 @@ export class NFTBundle {
       size += block.bytes.byteLength
     }
     return size
-  }
-
-  // Exposed publicly so we can test pathing through the root block.
-  async getRawBlock(cid: CID): Promise<Uint8Array> {
-    return this._blockstore.get(cid)
   }
 
   /**
